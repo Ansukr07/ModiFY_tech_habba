@@ -11,8 +11,9 @@ export function Gate() {
           ZeroCIBIL
         </a>
         <nav className="nav-mid" aria-label="Primary">
-          <a href="#how">How it works</a>
-          <a href="#desk">Lender desk</a>
+          <a href="/apply">Apply</a>
+          <a href="/queue">Lender desk</a>
+          <a href="/evidence">Evidence</a>
         </nav>
         <button type="button" className="btn btn-primary" onClick={() => navigate("/queue")}>
           Open desk

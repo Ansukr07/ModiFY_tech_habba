@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Shell } from "../components/Shell.jsx";
 import { SHOPS, paiseToInr, verdictLabel } from "../data/seed.js";
@@ -7,21 +7,11 @@ export function LenderDesk() {
   const { id } = useParams();
   const shop = SHOPS.find((s) => s.id === id);
   const [lean, setLean] = useState(0);
-  const [fair, setFair] = useState(shop?.ownerFlags?.gender || "woman");
-
-  const priced = useMemo(() => {
-    if (!shop) return { principal: 0, emi: 0 };
-    const factor = 1 - lean * 0.08;
-    const principal = Math.round(shop.principal * Math.max(0, factor));
-    return { principal, emi: Math.round(shop.maxEmi * Math.max(0, factor)) };
-  }, [lean, shop]);
 
   if (!shop) return <Shell role="lender"><div className="page"><h1>Sample not found</h1><Link to="/queue">Return to queue</Link></div></Shell>;
 
-  const twinSame =
-    shop.principal ===
-    (SHOPS.find((s) => s.id === (shop.id === "twin-a" ? "twin-b" : "twin-a"))?.principal ??
-      shop.principal);
+  const twins = SHOPS.filter((s) => s.id.startsWith("twin"));
+  const twinSame = twins.length === 2 && ["verdict", "principal", "rateBps", "tenureMonths", "cadence"].every((key) => twins[0][key] === twins[1][key]);
 
   return (
     <Shell role="lender">
@@ -34,6 +24,8 @@ export function LenderDesk() {
             {shop.name} · {shop.category} · {shop.city}
           </span>
         </div>
+        <h1 className="page-title">{shop.name}</h1>
+        <p className="muted">Illustrative assessment from a synthetic seed fixture. Figures have not been calculated from a submitted application.</p>
 
         <div className="desk">
           <section className="panel">
@@ -55,22 +47,22 @@ export function LenderDesk() {
             <p className="muted">
               Lean-month ratio {Math.round(shop.leanMonthRatio * 100)}%. Black bar is the stressed week.
             </p>
-            <div className="weekbars" aria-label="Weekly inflows, synthetic">
+            <div className="weekbars" role="img" aria-label={`Synthetic weekly inflow index: ${shop.weeks.join(", ")}. Lowest week is ${Math.min(...shop.weeks)}.`}>
               {shop.weeks.map((w, i) => {
                 const max = Math.max(...shop.weeks);
                 const leanIdx = shop.weeks.indexOf(Math.min(...shop.weeks));
                 return (
-                  <button type="button" key={i} tabIndex={-1} aria-hidden="true">
+                  <span key={i} aria-hidden="true" className="weekbar">
                     <i
                       className={i === leanIdx ? "lean" : ""}
                       style={{ height: `${(w / max) * 100}%` }}
                     />
-                  </button>
+                  </span>
                 );
               })}
             </div>
             <label className="muted" htmlFor="lean">
-              Stress lean weeks ({lean})
+              Explore lean-week reduction ({lean * 8}%)
             </label>
             <input
               id="lean"
@@ -81,6 +73,7 @@ export function LenderDesk() {
               value={lean}
               onChange={(e) => setLean(Number(e.target.value))}
             />
+            <p className="muted">Illustration only: a real scenario needs the underwriting API to recalculate capacity and terms. The sample offer below stays unchanged.</p>
             <ul className="muted">
               {shop.drivers.map((d) => (
                 <li key={d}>{d}</li>
@@ -92,7 +85,7 @@ export function LenderDesk() {
             <h2>Terms</h2>
             <p className="muted">Baseline: decline (no CIBIL). ZeroCIBIL prices capacity.</p>
             <p className="offer-amt">
-              {shop.principal ? paiseToInr(priced.principal) : verdictLabel(shop.verdict)}
+              {shop.principal ? paiseToInr(shop.principal) : verdictLabel(shop.verdict)}
             </p>
             <dl className="terms">
               <dt>Tenure</dt>
@@ -101,8 +94,8 @@ export function LenderDesk() {
               <dd>{shop.rateBps ? `${(shop.rateBps / 100).toFixed(1)}% p.a.` : "—"}</dd>
               <dt>Cadence</dt>
               <dd>{shop.cadence}</dd>
-              <dt>Max EMI from lean surplus</dt>
-              <dd>{shop.maxEmi ? paiseToInr(priced.emi) : "—"}</dd>
+              <dt>Maximum weekly repayment from lean surplus</dt>
+              <dd>{shop.maxEmi ? paiseToInr(shop.maxEmi) : "—"}</dd>
               <dt>Asked</dt>
               <dd>{paiseToInr(shop.requestedAmount)}</dd>
             </dl>
@@ -111,16 +104,8 @@ export function LenderDesk() {
                 {c}
               </p>
             ))}
-            <div className="field">
-              <label htmlFor="fair">Fairness: owner flag (cashflow held)</label>
-              <select id="fair" value={fair} onChange={(e) => setFair(e.target.value)}>
-                <option value="woman">Woman-owned</option>
-                <option value="man">Man-owned</option>
-              </select>
-            </div>
             <p className="muted">
-              Terms do not move with the flag
-              {twinSame ? " — twins priced equal." : "."} Current flag: {fair}.
+              Seed twin comparison: {twinSame ? "same verdict, principal, rate, tenure and cadence." : "terms differ; review the fixtures."} This does not establish model fairness.
             </p>
           </section>
         </div>
