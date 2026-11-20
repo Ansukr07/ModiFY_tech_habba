@@ -458,3 +458,18 @@
     min-height: 360px;
   }
 }
+.example-list {
+  display: grid;
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.example-list .panel h2 {
+  font-family: var(--display);
+  font-size: 28px;
+  margin: 16px 0 4px;
+}
+
+.example-list .panel .btn {
+  margin-top: 12px;
+}

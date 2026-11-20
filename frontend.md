@@ -3,6 +3,8 @@
 **Status:** Implementation plan, not a claim that these features are already connected.
 **Authority:** [spec.md](spec.md) defines product and underwriting; [design.md](design.md) defines visual design. API contracts are in [backend.md](backend.md). If these plans conflict with either source, the source wins.
 
+**Current frontend state:** The React app is a navigable synthetic fixture demo. `/apply` offers fixed sample shops; it does not save owner data or submit applications. The API-backed application flow, scoring, and scenario calculations below remain implementation requirements once the backend exists.
+
 ## 1. Purpose and boundaries
 
 Build a two-sided React application for credit-invisible MSMEs: owners submit operational evidence and understand their status; lenders inspect authenticity, lean-period capacity, proposed terms, and evidence. Auditor/policy users inspect decision history and fairness through lender-authorized read views in the demo; no separate auditor login is required by the source.
