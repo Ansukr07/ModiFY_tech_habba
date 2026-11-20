@@ -59,6 +59,10 @@
 .owner-track-subtitle { width:52%; height:24px; margin-bottom:28px; }
 .owner-track-line { height:16px; margin:22px 0; }
 .owner-track-skeleton .panel { min-height:250px; }
+.owner-arrow-skeleton { width:16px; height:16px; }
+.owner-chart-skeleton { height:13px; border-radius:7px; }
+.owner-chart-count { width:18px; height:14px; }
+.owner-field-skeleton { height:48px; border-radius:14px; }
 @media(max-width:700px) { .owner-hero,.owner-track-head,.owner-section-head,.owner-submit { align-items:start; flex-direction:column; } .owner-summary div { padding:18px 10px; } .owner-summary strong { font-size:28px; } .owner-summary span { font-size:11px; } .owner-row { grid-template-columns:1fr auto; gap:10px; } .owner-row .pill { grid-column:1; } .owner-track-grid { grid-template-columns:1fr; } .owner-fields { margin-left:0; } }
 .owner-actions { display:flex; flex-wrap:wrap; gap:10px; }
 .owner-dashboard-grid { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(320px,1fr); gap:28px; margin-bottom:64px; }

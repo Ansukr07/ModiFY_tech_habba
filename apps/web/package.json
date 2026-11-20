@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test src/data/seed.test.js"
+    "test": "node --test src/data/seed.test.js src/data/approvalPriority.test.js src/data/statementGraph.test.js"
   },
   "dependencies": {
     "react": "^19.0.0",

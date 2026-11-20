@@ -14,7 +14,7 @@ import { Skeleton, SkeletonBlock } from "./components/Skeleton.jsx";
 function Protected({ role, children }) {
   const { user, ready } = useAuth();
   const location = useLocation();
-  if (!ready) return <SkeletonBlock className="auth-loading" label="Checking your session"><Skeleton className="auth-loading-line" /></SkeletonBlock>;
+  if (!ready) return <SkeletonBlock className="auth-loading" label="Checking your session"><Skeleton className="auth-loading-title" /><Skeleton className="auth-loading-line" /><Skeleton className="auth-loading-line short" /></SkeletonBlock>;
   return user?.role === role ? children : <Navigate to="/login" replace state={{ from: location }} />;
 }
 

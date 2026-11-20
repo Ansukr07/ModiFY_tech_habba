@@ -1,4 +1,14 @@
 .skeleton { display:block; width:100%; height:1em; border-radius:4px; background:linear-gradient(90deg,var(--paper-2,#f6f6f4) 25%,#ecebe8 45%,var(--paper-2,#f6f6f4) 65%); background-size:240% 100%; animation:skeleton-shimmer 1.4s ease-in-out infinite; }
+.skeleton.short { width:55%; height:13px; }
+.skeleton.owner-summary-skeleton { width:52px; height:36px; }
+.skeleton.owner-arrow-skeleton,.skeleton.bank-arrow-skeleton,.skeleton.dashboard-nav-skeleton { width:16px; height:14px; }
+.skeleton.owner-chart-count,.skeleton.dashboard-pipeline-skeleton,.skeleton.bank-queue-count { width:24px; height:14px; }
+.skeleton.dashboard-stat-skeleton { width:56px; height:36px; }
+.skeleton.dashboard-portfolio-skeleton { width:76px; height:14px; }
+.skeleton.bank-count-skeleton { width:40px; height:28px; }
+.skeleton.bank-skeleton-title { width:46%; height:18px; }
+.skeleton.auth-loading-title { width:min(420px,80%); height:40px; }
+.skeleton.auth-loading-line.short { width:55%; }
 .skeleton-block { color:transparent; }
 .skeleton-block > .skeleton { margin:0; }
 @keyframes skeleton-shimmer { to { background-position-x:-240%; } }
