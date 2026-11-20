@@ -423,7 +423,7 @@
   }
 
   .nav-mid {
-    display: none;
+    flex-wrap: wrap;
   }
 
   .float-row {
@@ -439,6 +439,18 @@
 @media (max-width: 600px) {
   .topnav {
     padding: 16px;
+    flex-wrap: wrap;
+  }
+
+  .nav-mid {
+    order: 3;
+    width: 100%;
+    gap: 20px;
+    padding-top: 10px;
+  }
+
+  .q-row .pill {
+    justify-self: start;
   }
 
   .gate {
