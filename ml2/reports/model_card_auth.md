@@ -1,0 +1,3 @@
+# Model card: Authenticity (auth-v2-tuned)
+
+Dataset: IBM AML HI-Small, synthetic multi-agent transaction simulation. Algorithms tuned: XGBoost and Random Forest; selected candidate: xgboost. No SMOTE or other synthetic oversampling is used. RandomizedSearchCV performs 10 parameter samples per algorithm with three-fold training-only cross-validation using F1 scoring. The decision threshold is selected on validation data, and test metrics are in metrics_auth.json. Account-level stratified 70/15/15 split, seed 42. Raw scores are not calibrated. The model learns generator patterns and is not validated on Indian MSMEs or UPI.

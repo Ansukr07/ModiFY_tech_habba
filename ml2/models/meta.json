@@ -1,0 +1,81 @@
+{
+  "feature_schema_version": "1.0",
+  "data_version": "berka-pkdd99",
+  "stress_model_version": "stress-v1",
+  "training_seed": 42,
+  "feature_names": {
+    "B-inflow": [
+      "p10_rel",
+      "cv_weekly_inflow",
+      "slope_rel",
+      "lean_month_ratio",
+      "active_week_ratio",
+      "cv_missing"
+    ],
+    "B-full": [
+      "p10_rel",
+      "cv_weekly_inflow",
+      "slope_rel",
+      "lean_month_ratio",
+      "active_week_ratio",
+      "cv_missing",
+      "outflow_ratio",
+      "log1p_unique_payers"
+    ]
+  },
+  "lookback_weeks": 26,
+  "cutoff_step_weeks": 4,
+  "reference_emi_ratio": 0.35,
+  "label_variant": "next_4_week_net",
+  "stress_thresholds": {
+    "LOW_MAX": 0.2,
+    "MEDIUM_MAX": 0.45
+  },
+  "algorithm": "XGBoost XGBClassifier",
+  "probabilities_calibrated": false,
+  "metrics": {
+    "B-inflow": {
+      "threshold": 0.05,
+      "confusion_matrix": [
+        [
+          0,
+          724
+        ],
+        [
+          0,
+          3776
+        ]
+      ],
+      "accuracy": 0.8391111111111111,
+      "precision": 0.8391111111111111,
+      "recall": 1.0,
+      "f1": 0.9125181246979217,
+      "brier_score": 0.12824854254722595,
+      "test_positive_rate": 0.8391111111111111
+    },
+    "B-full": {
+      "threshold": 0.4699999999999999,
+      "confusion_matrix": [
+        [
+          2,
+          722
+        ],
+        [
+          2,
+          3774
+        ]
+      ],
+      "accuracy": 0.8391111111111111,
+      "precision": 0.8394128113879004,
+      "recall": 0.9994703389830508,
+      "f1": 0.9124758220502901,
+      "brier_score": 0.12439219653606415,
+      "test_positive_rate": 0.8391111111111111
+    }
+  },
+  "trained_at": "2026-11-20T15:14:16.857868+00:00",
+  "limitations": [
+    "proxy target, not real default",
+    "Berka is real Czech bank data, not Indian MSME/UPI validation"
+  ]
+}
