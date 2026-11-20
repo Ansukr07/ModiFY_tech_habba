@@ -30,7 +30,7 @@ export function LenderDesk() {
         <div className="desk">
           <section className="panel">
             <h2>Data trust</h2>
-            <p className="muted">PDFs never set the limit. P(shop-owned data) {Math.round(shop.pAuth * 100)}%.</p>
+            <p className="muted">Sample authenticity estimate: {Math.round(shop.pAuth * 100)}%. PDF uploads never set the limit.</p>
             {shop.rails.map((r) => (
               <div className="rail" key={r.type}>
                 <span>{r.label}</span>
@@ -38,14 +38,14 @@ export function LenderDesk() {
               </div>
             ))}
             <p className="muted" style={{ marginTop: 12 }}>
-              GST–UPI and payer mix live in the model. Mule-like files stay declined even with high inflow.
+              Review rail ownership, GST–UPI agreement, and payer concentration before considering terms.
             </p>
           </section>
 
           <section className="panel">
             <h2>Ninety-day operations</h2>
             <p className="muted">
-              Lean-month ratio {Math.round(shop.leanMonthRatio * 100)}%. Black bar is the stressed week.
+              Sample lean-month ratio {Math.round(shop.leanMonthRatio * 100)}%. Black bar marks the lowest week.
             </p>
             <div className="weekbars" role="img" aria-label={`Synthetic weekly inflow index: ${shop.weeks.join(", ")}. Lowest week is ${Math.min(...shop.weeks)}.`}>
               {shop.weeks.map((w, i) => {
@@ -55,7 +55,7 @@ export function LenderDesk() {
                   <span key={i} aria-hidden="true" className="weekbar">
                     <i
                       className={i === leanIdx ? "lean" : ""}
-                      style={{ height: `${(w / max) * 100}%` }}
+                      style={{ height: `${(w / max) * (i === leanIdx ? 1 - lean * 0.08 : 1) * 100}%` }}
                     />
                   </span>
                 );
@@ -73,7 +73,7 @@ export function LenderDesk() {
               value={lean}
               onChange={(e) => setLean(Number(e.target.value))}
             />
-            <p className="muted">Illustration only: a real scenario needs the underwriting API to recalculate capacity and terms. The sample offer below stays unchanged.</p>
+            <p className="muted">The slider changes the black bar only. A real scenario needs the underwriting API to recalculate capacity and terms; the sample offer stays unchanged.</p>
             <ul className="muted">
               {shop.drivers.map((d) => (
                 <li key={d}>{d}</li>
