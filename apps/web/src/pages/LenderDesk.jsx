@@ -1,19 +1,22 @@
 import { useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Shell } from "../components/Shell.jsx";
 import { SHOPS, paiseToInr, verdictLabel } from "../data/seed.js";
 
 export function LenderDesk() {
   const { id } = useParams();
-  const shop = SHOPS.find((s) => s.id === id) || SHOPS[0];
+  const shop = SHOPS.find((s) => s.id === id);
   const [lean, setLean] = useState(0);
-  const [fair, setFair] = useState(shop.ownerFlags?.gender || "woman");
+  const [fair, setFair] = useState(shop?.ownerFlags?.gender || "woman");
 
   const priced = useMemo(() => {
+    if (!shop) return { principal: 0, emi: 0 };
     const factor = 1 - lean * 0.08;
     const principal = Math.round(shop.principal * Math.max(0, factor));
     return { principal, emi: Math.round(shop.maxEmi * Math.max(0, factor)) };
   }, [lean, shop]);
+
+  if (!shop) return <Shell role="lender"><div className="page"><h1>Sample not found</h1><Link to="/queue">Return to queue</Link></div></Shell>;
 
   const twinSame =
     shop.principal ===
