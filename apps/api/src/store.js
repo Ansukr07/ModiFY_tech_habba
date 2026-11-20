@@ -10,6 +10,9 @@ const mem = {
   overrides: [],
   audit_logs: [],
   idempotency: [],
+  bank_accounts: [],
+  bank_transactions: [],
+  verification_requests: [],
 };
 
 function coll(name) {
@@ -53,6 +56,9 @@ export function memoryDb() {
     overrides: coll("overrides"),
     audit_logs: coll("audit_logs"),
     idempotency: coll("idempotency"),
+    bank_accounts: coll("bank_accounts"),
+    bank_transactions: coll("bank_transactions"),
+    verification_requests: coll("verification_requests"),
     kind: "memory",
   };
 }
@@ -61,13 +67,16 @@ export async function mongoDb(uri) {
   const { MongoClient } = await import("mongodb");
   const client = new MongoClient(uri);
   await client.connect();
-  const d = client.db("zerocibil");
+  const d = client.db();
   await d.collection("idempotency").createIndex({ actorId: 1, key: 1, scope: 1 }, { unique: true });
   await d.collection("cashflows").createIndex({ source_tx_id: 1 }, { unique: true, sparse: true });
   await d.collection("applications").createIndex({ shopId: 1, createdAt: -1 });
   await d.collection("rails").createIndex({ shopId: 1 });
   await d.collection("audit_logs").createIndex({ at: -1 });
   await d.collection("shops").createIndex({ ownerId: 1 });
+  await d.collection("bank_accounts").createIndex({ public_ref: 1 }, { unique: true });
+  await d.collection("bank_transactions").createIndex({ account_id: 1, posted_at: 1 });
+  await d.collection("verification_requests").createIndex({ application_id: 1, createdAt: -1 });
   return {
     users: d.collection("users"),
     shops: d.collection("shops"),
@@ -78,6 +87,9 @@ export async function mongoDb(uri) {
     overrides: d.collection("overrides"),
     audit_logs: d.collection("audit_logs"),
     idempotency: d.collection("idempotency"),
+    bank_accounts: d.collection("bank_accounts"),
+    bank_transactions: d.collection("bank_transactions"),
+    verification_requests: d.collection("verification_requests"),
     kind: "mongo",
     client,
   };

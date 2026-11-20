@@ -4,12 +4,7 @@ import { memoryDb, mongoDb } from "./store.js";
 
 async function openDb() {
   if (config.mongoUri === "memory") return memoryDb();
-  try {
-    return await mongoDb(config.mongoUri);
-  } catch (err) {
-    console.error("Mongo unavailable, using memory store:", err.message);
-    return memoryDb();
-  }
+  return mongoDb(config.mongoUri);
 }
 
 const db = await openDb();

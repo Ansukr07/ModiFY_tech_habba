@@ -103,6 +103,13 @@ def pv_principal(payment: int, periods: int, annual_bps: int, cadence: str) -> i
     return int(prin)  # conservative truncate paise
 
 
+def installment(principal: int, periods: int, annual_bps: int, cadence: str) -> int:
+    if principal <= 0 or periods <= 0:
+        return 0
+    r = (annual_bps / 10000) / (52 if cadence == "weekly" else 12)
+    return round(principal / periods if r == 0 else principal * r / (1 - (1 + r) ** (-periods)))
+
+
 def underwrite(features: dict, rails: list[dict], requested: int, identity_ok: bool, identity_mismatch: bool):
     from features import verified_rail_count
 
@@ -221,6 +228,7 @@ def underwrite(features: dict, rails: list[dict], requested: int, identity_ok: b
         counter=counter,
         periods=periods,
         rate=rate,
+        max_principal=max_prin,
     )
 
 
@@ -251,7 +259,7 @@ def early(verdict, reason, requested, meta, vrc, features, p_auth=None, a_band=N
 def pack(**k):
     rate = k.get("rate") or (RATE_BPS.get(k["rband"]) if k.get("rband") else 0)
     periods = k.get("periods") or 0
-    repayment = k["max_pay"] if k["principal"] > 0 else 0
+    repayment = installment(k["principal"], periods, rate, k["cadence"]) if k["principal"] > 0 else 0
     return {
         "verdict": k["verdict"],
         "not_run_reason": k.get("reason"),
@@ -261,22 +269,26 @@ def pack(**k):
         "risk_band": k["s_band"],
         "verified_rail_count": k["vrc"],
         "principal_paise": k["principal"] if k["verdict"] not in ("DECLINE", "UNVERIFIED") else 0,
-        "max_emi_paise": repayment,
+        "max_emi_paise": k["max_pay"],
         "tenure_months": k["tenure_mo"] if k["principal"] else 0,
         "repayment_periods": periods if k["principal"] else 0,
         "rate_bps": rate if k["principal"] else 0,
         "rate_band": k["rband"],
         "cadence": k["cadence"],
         "repayment_amount_paise": repayment if k["principal"] else 0,
+        "total_repayment_paise": repayment * periods if k["principal"] else 0,
+        "total_interest_paise": max(0, repayment * periods - k["principal"]) if k["principal"] else 0,
         "conditions": k["conditions"],
         "counteroffer": bool(k.get("counter")),
         "capacity": {
             "worst_4_week_net_paise": k["worst"],
+            "worst_4_week_start": k["features"].get("worst_4_week_start"),
+            "worst_4_week_end": k["features"].get("worst_4_week_end"),
             "lean_surplus_paise": k["lean_weekly"],
             "period": "week",
             "haircut": k["haircut"],
             "max_emi_paise": k["max_pay"],
-            "max_principal_paise": k["principal"],
+            "max_principal_paise": k.get("max_principal", 0),
         },
         "reference_emi_paise": REF_EMI_WEEKLY_PAISE,
         "target_definition": "next_synthetic_lean_period_reference_emi_coverage",

@@ -1,0 +1,28 @@
+flowchart LR
+  subgraph TRAIN["Offline Model B training — proposed"]
+    direction TB
+    A["Berka bank data: Czech, CZK<br/>Canonical weekly, scale-free features<br/>Stress label: next 4-week net below<br/>35% of own monthly inflow"]
+    B["Account split 70 / 15 / 15, seed 42<br/>Logistic baseline + gradient boosting<br/>Grouped CV, validation calibration"]
+    C[("Holdout ROC-AUC, PR-AUC, Brier<br/>Class balance + loan sanity check<br/>Joblib, metadata and model card")]
+    A --> B --> C
+  end
+  subgraph AGENT["Typed LangGraph tools — proposed"]
+    direction TB
+    D["Validate application and pin versions<br/>Provenance, verified rails, identity<br/>Normalize and build weekly features"]
+    E["Load versioned stress artifacts<br/>Model B-inflow or B-full by outflow rail<br/>Then authenticity: Model A or rules"]
+    F["Investigate exceptions if needed<br/>GST / bank / UPI reconciliation<br/>Concentration, invoices, missing evidence"]
+    G["Deterministic capacity and terms<br/>Lean month = worst 4-week net / 4 × 52 / 12<br/>Policy haircut, EMI, principal, counteroffer"]
+    D --> E --> F --> G
+  end
+  subgraph DELIVERY["Explanation, audit and evaluation"]
+    direction TB
+    H["Grounded explanation agent<br/>Drivers + versioned policy outputs<br/>Template fallback if LLM fails"]
+    I["Audit before completion<br/>Hash, provenance, outputs, versions<br/>Lender owns final credit decision"]
+    J["Separate evaluation routes<br/>Financial twins: identical terms<br/>Labelled baseline + scenario-only stress"]
+    H --> I
+    I -.-> J
+  N["Failure controls<br/>No verified rail: UNVERIFIED<br/>Identity failure: review / decline<br/>Model or schema failure: fail closed<br/>Audit failure: retry, no completion"]
+    I -.-> N
+  end
+  TRAIN -->|"Artifacts"| AGENT
+  AGENT -->|"Result"| DELIVERY

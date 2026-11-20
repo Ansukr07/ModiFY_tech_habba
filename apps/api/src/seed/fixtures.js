@@ -30,6 +30,14 @@ function weeksToCashflows(shopId, weeks, payers) {
 export const DEMO_USERS = [
   { _id: "user-owner", email: "owner@demo", role: "owner" },
   { _id: "user-lender", email: "lender@demo", role: "lender" },
+  { _id: "user-bank-admin", email: "bank@demo", role: "bank_admin" },
+];
+
+export const BANK_ACCOUNTS = [
+  { _id: "bank-clean", public_ref: "DEMO-ACCT-001", masked_number: "•••• 1042", customer_name: "Lakshmi Stores", city: "Bengaluru", status: "active", scenario_hint: "Matching account", weeks: [42, 48, 39, 51, 44, 28, 46, 49, 41, 47, 43, 45] },
+  { _id: "bank-mismatch", public_ref: "DEMO-ACCT-002", masked_number: "•••• 2718", customer_name: "Ravi Tailors", city: "Bengaluru", status: "active", scenario_hint: "Different business identity", weeks: [20, 22, 18, 25, 19, 21, 23, 17, 24, 20, 22, 18] },
+  { _id: "bank-short", public_ref: "DEMO-ACCT-003", masked_number: "•••• 6135", customer_name: "Lakshmi Stores", city: "Bengaluru", status: "active", scenario_hint: "Short transaction history", weeks: [42, 48, 39] },
+  { _id: "bank-suspicious", public_ref: "DEMO-ACCT-004", masked_number: "•••• 8890", customer_name: "QuickTrade Hub", city: "Bengaluru", status: "active", scenario_hint: "Unusual activity", weeks: [8, 9, 10, 90, 92, 88, 91, 89, 93, 90, 88, 91] },
 ];
 
 export const SHOPS = [

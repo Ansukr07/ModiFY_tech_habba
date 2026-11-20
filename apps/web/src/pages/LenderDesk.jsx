@@ -1,101 +1,148 @@
-import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Mark } from "../components/Mark.jsx";
-import { SHOPS, paiseToInr, verdictLabel } from "../data/seed.js";
+import { Skeleton, SkeletonBlock } from "../components/Skeleton.jsx";
+import { useAuth } from "../auth.jsx";
+import { api, idem } from "../data/api.js";
+import { paiseToInr, verdictLabel } from "../data/seed.js";
 import "../dashboard.css";
 
-const examples = SHOPS.filter((shop) => !shop.id.startsWith("twin"));
-
-function SideIcon({ kind }) {
-  const paths = {
-    dashboard: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
-    queue: <><path d="M4 5h16M4 12h16M4 19h16"/><path d="M7 4v2M7 11v2M7 18v2"/></>,
-    evidence: <><path d="M4 20V4h16v16H4Z"/><path d="m8 15 3-4 3 2 3-5"/></>,
-  };
-  return <svg aria-hidden="true" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{paths[kind]}</svg>;
+export function LenderDesk() {
+  const { id: routeId, section: routeSection } = useParams();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const { logout } = useAuth();
+  const [items, setItems] = useState([]);
+  const [queueLoading, setQueueLoading] = useState(true);
+  const [bundle, setBundle] = useState(null);
+  const [lean, setLean] = useState(0);
+  const [outflow, setOutflow] = useState(0);
+  const [scenario, setScenario] = useState(null);
+  const [error, setError] = useState("");
+  const [queueError, setQueueError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [reason, setReason] = useState("");
+  const [reducedAmount, setReducedAmount] = useState("");
+  const [evidenceType, setEvidenceType] = useState("");
+  const [audit, setAudit] = useState(null);
+  const [report, setReport] = useState(null);
+  const section = routeSection || "evidence";
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [verdictFilter, setVerdictFilter] = useState("all");
+  const [summary, setSummary] = useState(null);
+  const [fairness, setFairness] = useState(null);
+  const scenarioRequest = useRef(0);
+  const id = routeId || "";
+  const isQueue = pathname === "/queue";
+  const refreshQueue = () => api("/applications").then(({ items: rows }) => setItems(rows)).catch((e) => setQueueError(e.message)).finally(() => setQueueLoading(false));
+  const refresh = () => api(`/applications/${id}`).then(setBundle).catch((e) => setError(e.message));
+  async function prepareDemo() {
+    setBusy(true); setQueueError("");
+    try {
+      const seeded = await api("/admin/seed", { method: "POST" });
+      for (const application of seeded.applications || []) {
+        if (!application.latest_decision_id) await api(`/applications/${application._id}/score`, { method: "POST", headers: { "Idempotency-Key": idem() }, body: JSON.stringify({ expected_input_revision: application.input_revision }) });
+      }
+      await refreshQueue();
+      setSummary(await api("/evidence/summary"));
+    } catch (e) { setQueueError(e.message); }
+    finally { setBusy(false); }
+  }
+  useEffect(() => { refreshQueue(); }, []);
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  useEffect(() => { api("/evidence/summary").then(setSummary).catch(() => {}); }, []);
+  useEffect(() => { scenarioRequest.current++; setBundle(null); setError(""); setScenario(null); setLean(0); setOutflow(0); setAudit(null); setReport(null); if (id) refresh(); }, [id]);
+  const weeks = useMemo(() => {
+    const byWeek = new Map();
+    for (const row of bundle?.cashflows || []) {
+      const date = new Date(row.t);
+      const week = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() - (date.getUTCDay() + 6) % 7)).toISOString().slice(0, 10);
+      const current = byWeek.get(week) || { date: week, inflow: 0, outflow: 0 };
+      current.inflow += row.inflow_paise ?? row.inflowPaise ?? 0;
+      current.outflow += row.outflow_paise ?? row.outflowPaise ?? 0;
+      byWeek.set(week, current);
+    }
+    return [...byWeek.values()].sort((a, b) => a.date.localeCompare(b.date));
+  }, [bundle]);
+  async function score() {
+    setBusy(true); setError("");
+    try { await api(`/applications/${id}/score`, { method: "POST", headers: { "Idempotency-Key": idem() }, body: JSON.stringify({ expected_input_revision: bundle.shop.input_revision, policy_version: "v1" }) }); await refresh(); await refreshQueue(); }
+    catch (e) { setError(e.message); } finally { setBusy(false); }
+  }
+  async function stress(leanValue, outflowValue) {
+    const request = ++scenarioRequest.current;
+    setLean(leanValue); setOutflow(outflowValue); setScenario(null); setError("");
+    if (!bundle?.decision) return;
+    if (leanValue === 0 && outflowValue === 0) return;
+    try { const result = await api(`/applications/${id}/stress`, { method: "POST", body: JSON.stringify({ decision_id: bundle.decision._id, lean_inflow_delta_pct: -leanValue * 8, outflow_delta_pct: outflowValue * 5 }) }); if (request === scenarioRequest.current) setScenario(result); }
+    catch (e) { if (request === scenarioRequest.current) setError(e.message); }
+  }
+  async function override(action) {
+    setError("");
+    try { await api(`/applications/${id}/override`, { method: "POST", headers: { "Idempotency-Key": idem() }, body: JSON.stringify({ decision_id: bundle.decision._id, action, reason, ...(action === "reduce_terms" ? { proposed_terms: { principal_paise: Math.round(Number(reducedAmount) * 100) } } : {}), ...(action === "request_evidence" ? { evidence_type: evidenceType } : {}) }) }); await refresh(); await refreshQueue(); setReason(""); }
+    catch (e) { setError(e.message); }
+  }
+  async function signOut(event) { event.preventDefault(); await logout(); navigate("/login", { replace: true }); }
+  const nav = (name, label) => <Link className={section === name ? "dashboard-sidebar-active" : ""} to={name === "evidence" ? `/application/${id}` : `/application/${id}/${name}`}>{label}</Link>;
+  const visibleItems = items.filter((item) => (filter === "all" || (filter === "pending" ? !item.latest_verdict : filter === "needs_evidence" ? item.status === "awaiting_evidence" || item.effective_verdict === "UNVERIFIED" : filter === "reviewed" ? item.status === "reviewed" : !!item.latest_verdict && item.status !== "reviewed" && item.status !== "awaiting_evidence")) && (verdictFilter === "all" || item.effective_verdict === verdictFilter) && `${item.shop_name} ${item.shopId} ${item._id} ${item.effective_verdict || item.status}`.toLowerCase().includes(query.toLowerCase()));
+  const queue = <section className="dashboard-queue" aria-label="Application list"><div className="dashboard-queue-heading"><div><h2>All applications</h2><p>Choose a request to review its evidence and terms.</p></div><span>{queueLoading ? <Skeleton className="dashboard-queue-count"/> : `${visibleItems.length} of ${items.length}`}</span></div><div className="dashboard-queue-tools"><label>Search applications<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Shop or application ID" /></label><label>Assessment status<select value={filter} onChange={(event) => setFilter(event.target.value)}><option value="all">All statuses</option><option value="pending">Awaiting assessment</option><option value="assessed">Ready for review</option><option value="needs_evidence">Needs evidence</option><option value="reviewed">Reviewed</option></select></label><label>Underwriting verdict<select value={verdictFilter} onChange={(event) => setVerdictFilter(event.target.value)}><option value="all">All verdicts</option>{["UNVERIFIED", "THIN_FILE", "STANDARD", "STEP_UP", "DECLINE"].map((value) => <option key={value} value={value}>{verdictLabel(value)}</option>)}</select></label>{!items.length && <button className="btn btn-secondary" disabled={busy} onClick={prepareDemo}>{busy ? "Preparing demo…" : "Seed and score demo applications"}</button>}</div>{queueError && <p role="alert">Could not load applications: {queueError}</p>}{queueLoading ? <SkeletonBlock label="Loading applications">{[0,1,2].map(i=><div className="dashboard-queue-row dashboard-queue-skeleton" key={i}><Skeleton/><Skeleton/><Skeleton/><Skeleton/></div>)}</SkeletonBlock> : <div className="dashboard-queue-list"><div className="dashboard-queue-labels" aria-hidden="true"><span>Business</span><span>Evidence</span><span>Requested</span><span>Review reason</span><span>Status</span><span></span></div>{visibleItems.map((item) => <Link key={item._id} className="dashboard-queue-row" to={`/application/${item._id}`}><span className="dashboard-queue-business"><strong>{item.shop_name || item.shopId}</strong><small>{item.business_type || "Business"} · {item._id.slice(0, 8)} · Synthetic · {item.assessed_at?.slice(0, 10) || "Not assessed"}</small></span><span>{item.verified_rail_count} simulated verified rails</span><span className="dashboard-queue-money">{paiseToInr(item.requested_amount_paise)}</span><span>{item.review_reason?.replaceAll("_", " ") || "No additional review flag"}</span><span className={`dashboard-status ${item.latest_verdict ? "dashboard-status-assessed" : ""}`}>{item.effective_action ? `${item.effective_action.replaceAll("_", " ")} · ` : ""}{item.effective_verdict ? verdictLabel(item.effective_verdict) : item.status}</span><span className="dashboard-row-arrow" aria-hidden="true">→</span></Link>)}{!visibleItems.length && !queueError && <div className="dashboard-queue-empty"><strong>{items.length ? "No matching applications" : "No applications yet"}</strong><p>{items.length ? "Try another search or status filter." : "New requests will appear here when owners submit them."}</p></div>}</div>}</section>;
+  const assessed = items.filter((item) => item.latest_verdict).length;
+  const verifiedCount = items.filter((item) => item.verified_rail_count > 0).length;
+  const pending = items.length - assessed;
+  const needsEvidence = items.filter((item) => item.status === "awaiting_evidence" || item.effective_verdict === "UNVERIFIED").length;
+  const reviewed = items.filter((item) => item.status === "reviewed").length;
+  const status = [{ label: "Awaiting assessment", count: pending }, { label: "Needs evidence", count: needsEvidence }, { label: "Ready for review", count: Math.max(0, assessed - needsEvidence - reviewed) }, { label: "Reviewed", count: reviewed }];
+  const shell = (content) => <div className="dashboard-frame"><a className="skip" href="#main">Skip to dashboard</a><div className="dashboard-window"><header className="dashboard-topbar"><Link to="/" className="dashboard-logo"><span><Mark size={20}/></span> ZeroCIBIL</Link><span className="dashboard-workspace">Lender workspace</span><div className="dashboard-top-actions"><span className="dashboard-synthetic">Synthetic demo data</span><Link className="dashboard-home" to="/login" onClick={signOut}>Sign out →</Link></div></header><aside className="dashboard-sidebar" aria-label="Dashboard sections"><p>WORKSPACE</p><Link className={!id && !isQueue ? "dashboard-sidebar-active" : ""} to="/dashboard">Overview</Link><Link className={isQueue ? "dashboard-sidebar-active" : ""} to="/queue">Applications <span className="dashboard-nav-count">{items.length}</span></Link><p>ASSESSMENT</p>{id ? <>{nav("evidence", "Evidence & activity")}{nav("limit", "How the limit was set")}{nav("terms", "Proposed terms")}{nav("reasons", "Why this result")}{nav("actions", "Lender actions")}<div className="dashboard-sidebar-case"><span>Selected application</span><strong>{bundle?.shop?.name || "Loading…"}</strong><small>{id.slice(0, 8)}</small></div></> : <span className="dashboard-sidebar-hint">Select an application to view evidence, terms and lender actions.</span>}</aside><main id="main" className="dashboard-main">{content}</main></div></div>;
+  if (isQueue) return shell(<><div className="dashboard-heading"><div><h1>Applications</h1><p>Review requests, compare verified evidence, and open an assessment.</p></div><span className="dashboard-synthetic">Synthetic demo data</span></div>{queue}</>);
+  if (!id) return shell(<><div className="dashboard-heading" id="overview"><div><h1>Lender dashboard</h1><p>Review applications and the operating evidence behind each assessment.</p></div></div><div className="dashboard-overview-stats">{[["Applications", items.length, "Requests in this workspace"], ["Awaiting assessment", pending, "Need lender review"], ["Assessed", assessed, "Result available"], ["With verified rails", verifiedCount, "Simulated operating sources"]].map(([label, value, note]) => <div key={label}><span>{label}</span><strong>{queueLoading ? "—" : value}</strong><small>{note}</small></div>)}</div><section className="dashboard-overview-chart" aria-label="Application status chart"><h2>Assessment pipeline</h2><p>Share of applications by review status · synthetic demo data</p><div className="dashboard-pipeline">{status.map(({label,count}) => <div key={label}><span>{label}</span><div><i style={{width: `${items.length ? count / items.length * 100 : 0}%`}} /></div><strong>{count}</strong></div>)}</div></section><section className="dashboard-evidence-summary"><h2>Demo evidence</h2>{error && <p role="alert">{error}</p>}<p>These are synthetic application counts, not funded loans or real-world model performance.</p><div><span>Applications <strong>{summary?.application_count ?? "—"}</strong></span><span>Assessed <strong>{summary?.assessed_count ?? "—"}</strong></span><span>Positive proposals <strong>{summary?.positive_offer_count ?? "—"}</strong></span><span>Unverified <strong>{summary?.byVerdict?.UNVERIFIED ?? "—"}</strong></span><span>Declined <strong>{summary?.byVerdict?.DECLINE ?? "—"}</strong></span><span>Pending <strong>{summary?.pending_count ?? "—"}</strong></span></div><button className="btn btn-secondary" disabled={!items.some((item) => item.shopId === "twin-a" && item.latest_decision_id) || !items.some((item) => item.shopId === "twin-b" && item.latest_decision_id)} onClick={() => api("/evidence/fairness", { method: "POST", body: JSON.stringify({ fixture_pair_id: "lakshmi-twins" }) }).then(setFairness).catch((e) => setError(e.message))}>Compare synthetic fairness twins</button>{fairness && <p>{fairness.pass ? "Matched terms in this fixture." : "Twin terms differ — review required."} This single pair does not establish population fairness. Audit {fairness.audit_reference}.</p>}{fairness && <p>Matched business evidence; protected attributes changed: {fairness.changed_attributes?.join(", ") || "unknown"}.</p>}{fairness && <dl>{Object.entries(fairness.deltas || {}).map(([name, values]) => <div key={name}><dt>{name.replaceAll("_", " ")}</dt><dd>{values.map((value) => typeof value === "number" && name.includes("paise") ? paiseToInr(value) : String(value)).join(" / ")}</dd></div>)}</dl>}</section><div className="dashboard-overview-link"><Link to="/queue">View all applications →</Link></div></>);
+  if (!bundle && !error) return shell(<SkeletonBlock className="dashboard-detail-skeleton" label="Loading application"><Skeleton className="dashboard-skeleton-title"/><div className="dashboard-metrics">{[0,1,2,3].map(i=><section key={i}><Skeleton/><Skeleton/></section>)}</div><Skeleton className="dashboard-skeleton-chart"/></SkeletonBlock>);
+  if (!bundle) return shell(<p role="alert">Could not load application: {error}. <Link to="/dashboard">Return to overview</Link></p>);
+  const { application, shop, rails, decision, latest_action: latestAction } = bundle;
+  const stale = !!decision && decision.input_revision !== shop.input_revision;
+  const d = scenario || decision || {};
+  const verified = rails.filter((r) => ["verified", "verified_simulated"].includes(r.trustClass || r.trust_class));
+  const capacity = d.capacity || {};
+  const max = Math.max(1, ...weeks.flatMap((w) => [w.inflow, w.outflow, w.inflow - w.outflow]));
+  const min = Math.min(0, ...weeks.map((w) => w.inflow - w.outflow));
+  const chartY = (value) => 188 - (value - min) / (max - min) * 150;
+  const chartPoint = (value, i) => `${48 + i * 628 / Math.max(1, weeks.length - 1)},${chartY(value)}`;
+  const lines = ["inflow", "outflow", "net"].map((key) => weeks.map((w, i) => chartPoint(key === "net" ? w.inflow - w.outflow : w[key], i)).join(" "));
+  const leanIndex = weeks.findIndex((w) => w.date === decision?.capacity?.worst_4_week_start);
+  const counterGap = decision && application.requested_amount_paise > decision.principal_paise ? application.requested_amount_paise - decision.principal_paise : 0;
+  const drivers = d.drivers || [];
+  const conditions = d.conditions || [];
+  return shell(<><div className="dashboard-heading"><div><h1>{({ evidence: "Evidence & activity", limit: "How the limit was set", terms: "Proposed terms", reasons: "Why this result", actions: "Lender actions" })[section] || "Evidence & activity"}</h1><p>{shop.name} assessment · synthetic demo data</p></div></div><div className="dashboard-case"><span>{shop.name} · {shop.business_type || shop.category || "Shop"} · {shop.city || ""}</span><span className="dashboard-verdict">{latestAction ? `Lender action · ${verdictLabel(latestAction.effective.verdict)}` : d.verdict ? verdictLabel(d.verdict) : application.status}</span></div><p className="dashboard-disclaimer">Assessment terms are not a final credit decision or disbursal.</p>{stale && <p role="alert">Evidence changed after the saved assessment. Reassess to use the latest shop records.</p>}<button className="btn btn-primary" onClick={score} disabled={busy}>{busy ? "Scoring…" : stale ? "Reassess application" : decision ? "Run assessment again" : "Run assessment"}</button>{error && <p role="alert">{error}</p>}
+    {section === "evidence" && <><div className="dashboard-metrics"><section><h2>Requested amount</h2><strong>{paiseToInr(application.requested_amount_paise)}</strong><p>Owner request</p></section><section><h2>Proposed principal</h2><strong>{d.principal_paise ? paiseToInr(d.principal_paise) : "—"}</strong><p>{d.principal_paise ? "Backend assessment" : "No positive offer"}</p></section><section><h2>Authenticity estimate</h2><strong>{d.p_auth == null ? "—" : `${Math.round(d.p_auth * 100)}%`}</strong><p>{verified.length} simulated verified rails</p></section><section><h2>Lean-period stress</h2><strong>{d.p_stress == null ? "—" : `${Math.round(d.p_stress * 100)}%`}</strong><p>Synthetic proxy, not real default</p></section></div>
+    <div className="dashboard-analysis" id="evidence"><section className="dashboard-chart-card"><div className="dashboard-card-heading"><div><h2>Weekly operating cashflow</h2><p>Synthetic transactions · {weeks.length} observed weeks</p></div></div><div className="dashboard-chart-key"><span>Inflow</span><span>Outflow</span><span>Net</span><span>Weakest four weeks</span></div><svg className="dashboard-line-chart" viewBox="0 0 720 225" role="img" aria-label={`Weekly synthetic cashflow from ${weeks[0]?.date || "unknown"} to ${weeks.at(-1)?.date || "unknown"}`} preserveAspectRatio="none">{[38,88,138,188].map((y) => <line key={y} x1="48" x2="676" y1={y} y2={y} stroke="#e7eaf1"/>)}<line x1="48" x2="676" y1={chartY(0)} y2={chartY(0)} stroke="#7c8290" strokeDasharray="4 4"/>{leanIndex >= 0 && <rect x={Math.max(48, 48 + leanIndex * 628 / Math.max(1, weeks.length - 1) - 8)} y="24" width={Math.min(628, 3 * 628 / Math.max(1, weeks.length - 1) + 16)} height="164" fill="#f1edff"/>}{lines.map((pts, i) => <polyline key={i} points={pts} fill="none" stroke={["#147a3a", "#b42318", "#171f3d"][i]} strokeWidth={i === 2 ? 3 : 2}/>)}</svg><div className="dashboard-chart-axis"><span>{weeks[0]?.date}</span><span>Dashed line: ₹0 net</span><span>{weeks.at(-1)?.date}</span></div><details className="dashboard-week-table"><summary>View weekly values</summary><div className="dashboard-table-scroll"><table><thead><tr><th>Week of</th><th>Inflow</th><th>Outflow</th><th>Net</th></tr></thead><tbody>{weeks.map((w) => <tr key={w.date}><th>{w.date}</th><td>{paiseToInr(w.inflow)}</td><td>{paiseToInr(w.outflow)}</td><td>{paiseToInr(w.inflow - w.outflow)}</td></tr>)}</tbody></table></div></details><label className="dashboard-slider-label" htmlFor="dashboard-lean">Reduce inflow for scenario <strong>{lean * 8}%</strong></label><input id="dashboard-lean" type="range" min="0" max="6" value={lean} onChange={(e) => stress(Number(e.target.value), outflow)} disabled={!decision}/><label className="dashboard-slider-label" htmlFor="dashboard-outflow">Increase outflow for scenario <strong>{outflow * 5}%</strong></label><input id="dashboard-outflow" type="range" min="0" max="6" value={outflow} onChange={(e) => stress(lean, Number(e.target.value))} disabled={!decision}/>{scenario && <div className="dashboard-scenario"><strong>Illustrative scenario only</strong><small>Inflow −{lean * 8}% · outflow +{outflow * 5}%</small><span>Verdict: {verdictLabel(decision.verdict)} → {verdictLabel(scenario.verdict)}</span><span>Weekly surplus: {paiseToInr(decision.capacity?.lean_surplus_paise || 0)} → {paiseToInr(scenario.capacity?.lean_surplus_paise || 0)}</span><span>Weekly capacity: {paiseToInr(decision.capacity?.max_emi_paise || 0)} → {paiseToInr(scenario.capacity?.max_emi_paise || 0)}</span><span>Policy maximum: {paiseToInr(decision.capacity?.max_principal_paise || 0)} → {paiseToInr(scenario.capacity?.max_principal_paise || 0)}</span><span>Proposed principal: {paiseToInr(decision.principal_paise)} → {paiseToInr(scenario.principal_paise || 0)}</span><span>Rate and tenure: {decision.rate_bps / 100}% / {decision.tenure_months} mo → {scenario.rate_bps / 100}% / {scenario.tenure_months} mo</span><p>The saved decision is unchanged.</p><button className="btn btn-secondary" onClick={() => stress(0, 0)}>Reset scenario</button></div>}</section><section className="dashboard-trust-card"><h2>Data trust</h2><p>{verified.length} simulated verified rails. No bureau file.</p>{rails.map((r, i) => <div className="dashboard-rail" key={`${r.type}-${i}`}><span>{r.type.toUpperCase()}<small> · {r.provenance || "Unknown provenance"} · added {r.createdAt?.slice(0, 10) || "date unknown"} · identity {r.identity_match === false ? "mismatch" : r.identity_match === true ? "matched" : "unknown"}</small></span><strong>{r.type === "pdf" ? "Unverified upload" : r.trustClass === "supporting" ? "Supporting only" : ["verified", "verified_simulated"].includes(r.trustClass) ? "Simulated verified" : "Unverified"}</strong></div>)}{bundle.reconciliation && <div className="dashboard-reconciliation"><strong>GST / UPI comparison</strong><span>GST sales {paiseToInr(bundle.reconciliation.gst_sales_paise)}</span><span>UPI credits {paiseToInr(bundle.reconciliation.upi_credits_paise)}</span><span>Difference {Math.round(bundle.reconciliation.relative_gap * 100)}%</span><small>{bundle.reconciliation.period_note}. A gap is a review flag, not proof of fraud.</small></div>}<p className="dashboard-trust-note">PDF evidence cannot establish verified operational activity or set a full limit.</p></section></div>
+    </>}{section === "limit" && !decision && <section className="dashboard-detail-card"><h2>How the limit was set</h2><p>Run an assessment to see the capacity calculation.</p></section>}{section === "limit" && decision && <section className="dashboard-detail-card dashboard-capacity"><h2>How the limit was set</h2><div className="dashboard-capacity-steps"><div><span>Weakest four-week net</span><strong>{paiseToInr(capacity.worst_4_week_net_paise || 0)}</strong><small>{capacity.worst_4_week_start || "Period unavailable"} to {capacity.worst_4_week_end || "—"}</small></div><div><span>Lean weekly surplus</span><strong>{paiseToInr(capacity.lean_surplus_paise || 0)}</strong></div><div><span>Capacity factor</span><strong>{Math.round((capacity.haircut || 0) * 100)}%</strong><small>Trust, stress and history policy</small></div><div><span>Maximum weekly installment</span><strong>{paiseToInr(capacity.max_emi_paise || 0)}</strong></div><div><span>Policy maximum principal</span><strong>{d.total_repayment_paise ? paiseToInr(capacity.max_principal_paise || 0) : "Unavailable in saved assessment"}</strong></div></div>{counterGap > 0 && <p className="dashboard-counteroffer">Proposal is {paiseToInr(counterGap)} below the requested amount.</p>}{decision.not_run_reason && <p>Policy reason: {decision.not_run_reason.replaceAll("_", " ")}.</p>}<small>Policy {decision.versions?.policy || "version unavailable"} · assessed {decision.assessed_at?.slice(0, 10) || "date unavailable"}</small></section>}
+    {section === "terms" && <div className="dashboard-detail-grid" id="terms"><section className="dashboard-detail-card"><h2>Proposed terms</h2><dl><dt>Verdict</dt><dd>{d.verdict ? verdictLabel(d.verdict) : "Not assessed"}</dd><dt>Principal</dt><dd>{d.principal_paise ? paiseToInr(d.principal_paise) : "—"}</dd><dt>Tenure</dt><dd>{d.tenure_months ? `${d.tenure_months} months` : "—"}</dd><dt>Annual rate</dt><dd>{d.rate_bps ? `${(d.rate_bps / 100).toFixed(1)}%` : "—"}</dd><dt>Cadence</dt><dd>{d.cadence || "—"}</dd><dt>Installment</dt><dd>{d.total_repayment_paise ? paiseToInr(d.repayment_amount_paise) : "—"}</dd><dt>Maximum {d.cadence || "weekly"} installment</dt><dd>{d.max_emi_paise ? paiseToInr(d.max_emi_paise) : "—"}</dd><dt>Number of payments</dt><dd>{d.repayment_periods || "—"}</dd><dt>Total repayment</dt><dd>{d.total_repayment_paise ? paiseToInr(d.total_repayment_paise) : "—"}</dd><dt>Total interest</dt><dd>{d.total_interest_paise ? paiseToInr(d.total_interest_paise) : "—"}</dd></dl></section></div>}{section === "reasons" && <div className="dashboard-detail-grid"><section className="dashboard-detail-card"><h2>Why this result</h2>{drivers.length ? <ul>{drivers.map((x, i) => <li key={i}>{typeof x === "string" ? x : x.text || x.label || x.feature}</li>)}</ul> : <p>Run an assessment to see grounded drivers.</p>}<h3>Conditions and next steps</h3>{conditions.length ? <ul>{conditions.map((x, i) => <li key={i}>{x}</li>)}</ul> : <p>No conditions reported.</p>}</section></div>}
+    {section === "actions" && <section className="dashboard-detail-card dashboard-actions" id="actions"><h2>Lender actions</h2>{decision ? <>{latestAction && <div className="dashboard-effective"><strong>Recorded lender action: {latestAction.action.replaceAll("_", " ")}</strong><span>Effective verdict {verdictLabel(latestAction.effective.verdict)} · principal {paiseToInr(latestAction.effective.principal_paise)}</span><small>{latestAction.evidence_type ? `Evidence requested: ${latestAction.evidence_type}` : latestAction.reason} · {latestAction.createdAt?.slice(0, 10)} · Audit {latestAction.audit_reference}</small></div>}<label>Evidence needed<select value={evidenceType} onChange={(e) => setEvidenceType(e.target.value)}><option value="">Choose evidence type</option><option value="aa">Account records</option><option value="upi">UPI merchant activity</option><option value="gst">GST filing summary</option><option value="identity">Shop identity match</option><option value="reconciliation">Resolve rail mismatch</option><option value="other">Other supporting evidence</option></select></label><label>Reason (at least 8 characters)<input value={reason} onChange={(e) => setReason(e.target.value)} /></label><label>Reduced principal (₹, optional)<input type="number" min="0" max={(decision.principal_paise || 0) / 100} step="0.01" value={reducedAmount} onChange={(e) => setReducedAmount(e.target.value)} /></label><div className="dashboard-action-buttons"><button className="btn btn-secondary" disabled={reason.trim().length < 8 || !evidenceType} onClick={() => override("request_evidence")}>Request evidence</button><button className="btn btn-secondary" disabled={reason.trim().length < 8 || reducedAmount === "" || !Number.isFinite(Number(reducedAmount)) || Number(reducedAmount) < 0 || Number(reducedAmount) * 100 > decision.principal_paise} onClick={() => override("reduce_terms")}>Record reduced terms</button><button className="btn btn-secondary" disabled={reason.trim().length < 8} onClick={() => override("decline")}>Record decline</button><button className="btn btn-secondary" onClick={() => api(`/applications/${id}/report`).then(setReport).catch((e) => setError(e.message))}>Load report</button><button className="btn btn-secondary" onClick={() => api(`/applications/${id}/audit`).then(setAudit).catch((e) => setError(e.message))}>Load audit</button></div>{report && <ReportView report={report} />}{audit && <div className="dashboard-readable"><h3>Audit timeline</h3><ol>{audit.items.slice().sort((a, b) => a.at.localeCompare(b.at)).map((event) => <li key={event._id}><strong>{event.action}</strong> · {event.at?.slice(0, 16).replace("T", " ")} · {event.actorId}{event.action_detail && <span> · {event.action_detail.replaceAll("_", " ")}</span>}{event.reason && <span> · {event.reason}</span>}<small>Input revision {event.input_revision || "unknown"} · Policy {event.policyVersion || "unknown"} · Audit reference {event._id}</small></li>)}</ol></div>}</> : <p>Run an assessment to enable lender actions.</p>}</section>}</>);
 }
 
-export function LenderDesk() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const shop = SHOPS.find((item) => item.id === id);
-  const [lean, setLean] = useState(0);
-
-  if (!shop) return <div className="dashboard-missing"><h1>Sample not found</h1><Link to="/queue">Return to queue</Link></div>;
-
-  const verified = shop.rails.filter((rail) => rail.trustClass === "verified");
-  const twins = SHOPS.filter((item) => item.id.startsWith("twin"));
-  const twinSame = twins.length === 2 && ["verdict", "principal", "rateBps", "tenureMonths", "cadence"].every((key) => twins[0][key] === twins[1][key]);
-  const lowest = shop.weeks.indexOf(Math.min(...shop.weeks));
-  const stressedWeeks = shop.weeks.map((week, index) => index === lowest ? week * (1 - lean * 0.08) : week);
-  const max = Math.max(...shop.weeks);
-  const points = stressedWeeks.map((week, index) => `${24 + index * 672 / (shop.weeks.length - 1)},${202 - week / max * 160}`).join(" ");
-  const chartLabel = `Synthetic weekly inflow index: ${stressedWeeks.map((value) => Math.round(value)).join(", ")}. Lowest observed week is ${Math.min(...shop.weeks)}.`;
-
-  return (
-    <div className="dashboard-frame">
-      <a className="skip" href="#main">Skip to assessment</a>
-      <div className="dashboard-window">
-        <header className="dashboard-topbar">
-          <Link to="/" className="dashboard-logo" aria-label="ZeroCIBIL home"><span><Mark size={20}/></span> ZeroCIBIL</Link>
-          <span className="dashboard-workspace">Lender workspace <span>·</span> Synthetic demo</span>
-          <div className="dashboard-top-actions"><Link to="/queue">All applications</Link><Link className="dashboard-home" to="/login" onClick={() => sessionStorage.removeItem("zerocibil-role")}>Sign out →</Link></div>
-        </header>
-
-        <aside className="dashboard-sidebar" aria-label="Lender navigation">
-          <p>GENERAL</p>
-          <Link className="dashboard-sidebar-active" to={`/application/${shop.id}`}><SideIcon kind="dashboard" /> Dashboard</Link>
-          <Link to="/queue"><SideIcon kind="queue" /> Application queue</Link>
-
-          <p>SEED APPLICATIONS</p>
-          {examples.map((example) => <Link key={example.id} className={`dashboard-seed-link ${example.id === shop.id ? "dashboard-current-shop" : ""}`} to={`/application/${example.id}`}>{example.name}</Link>)}
-        </aside>
-
-        <main id="main" className="dashboard-main">
-          <div className="dashboard-heading">
-            <div><h1>Assessment dashboard</h1><p>Review the shop’s trust, cashflow and proposed terms in one place.</p></div>
-            <label className="dashboard-select">Sample shop <select value={shop.id} onChange={(event) => { setLean(0); navigate(`/application/${event.target.value}`); }}>{SHOPS.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
-          </div>
-          <div className="dashboard-case"><span className="dashboard-label">SYNTHETIC APPLICATION</span><span>{shop.name} · {shop.category} · {shop.city}</span><span className={`dashboard-verdict dashboard-verdict-${shop.verdict.toLowerCase()}`}>{verdictLabel(shop.verdict)}</span></div>
-          <p className="dashboard-disclaimer">Illustrative fixture only. No submitted application, disbursal, live rail connection or trained-model result is shown.</p>
-
-          <div className="dashboard-metrics">
-            <section><h2>Requested amount</h2><strong>{paiseToInr(shop.requestedAmount)}</strong><p>Owner’s sample request</p></section>
-            <section><h2>Proposed principal</h2><strong>{shop.principal ? paiseToInr(shop.principal) : "—"}</strong><p>{shop.principal ? "Capacity-constrained sample offer" : "No offer for this sample"}</p></section>
-            <section><h2>Authenticity estimate</h2><strong>{verified.length ? `${Math.round(shop.pAuth * 100)}%` : "—"}</strong><p>{verified.length ? `${verified.length} simulated verified rail${verified.length === 1 ? "" : "s"}` : "No verified operational rail"}</p></section>
-            <section><h2>Lean-period stress</h2><strong>{verified.length ? `${Math.round(shop.pStress * 100)}%` : "—"}</strong><p>Synthetic proxy, not real default</p></section>
-          </div>
-
-          <div className="dashboard-analysis">
-            <section className="dashboard-chart-card">
-              <div className="dashboard-card-heading"><div><h2>Weekly shop activity</h2><p>Synthetic inflow index · {shop.weeks.length} observed weeks</p></div><span className="dashboard-chart-tag">Lean ratio {Math.round(shop.leanMonthRatio * 100)}%</span></div>
-              <svg className="dashboard-line-chart" viewBox="0 0 720 225" role="img" aria-label={chartLabel} preserveAspectRatio="none">
-                {[42,82,122,162,202].map((y) => <line key={y} x1="24" x2="696" y1={y} y2={y} stroke="#e7eaf1" strokeWidth="1" />)}
-                <polygon points={`24,202 ${points} 696,202`} fill="#425cff" opacity="0.08" />
-                <polyline points={points} fill="none" stroke="#171f3d" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
-                <circle cx={24 + lowest * 672 / (shop.weeks.length - 1)} cy={202 - stressedWeeks[lowest] / max * 160} r="6" fill="#425cff" stroke="white" strokeWidth="3" />
-              </svg>
-              <div className="dashboard-chart-axis"><span>Week 1</span><span>Week {Math.ceil(shop.weeks.length / 2)}</span><span>Week {shop.weeks.length}</span></div>
-              <label className="dashboard-slider-label" htmlFor="dashboard-lean">Explore lowest-week reduction <strong>{lean * 8}%</strong></label>
-              <input id="dashboard-lean" type="range" min="0" max="6" value={lean} onChange={(event) => setLean(Number(event.target.value))} />
-              <p className="dashboard-chart-note">This slider changes the chart only. The sample terms below stay fixed until an underwriting API can recompute a scenario.</p>
-            </section>
-            <section className="dashboard-trust-card">
-              <div className="dashboard-card-heading"><div><h2>Data trust</h2><p>Source and provenance</p></div></div>
-              {shop.rails.map((rail) => <div className="dashboard-rail" key={rail.type}><span>{rail.label}</span><strong className={rail.trustClass === "verified" ? "dashboard-verified" : "dashboard-unverified"}>{rail.trustClass === "verified" ? "Verified (sim)" : "Unverified"}</strong></div>)}
-              <p className="dashboard-trust-note">PDF uploads do not set the limit. A missing verified rail leads to collect-data status.</p>
-            </section>
-          </div>
-
-          <div className="dashboard-detail-grid">
-            <section className="dashboard-detail-card"><h2>Proposed terms</h2><dl><dt>Verdict</dt><dd>{verdictLabel(shop.verdict)}</dd><dt>Principal</dt><dd>{shop.principal ? paiseToInr(shop.principal) : "—"}</dd><dt>Tenure</dt><dd>{shop.tenureMonths ? `${shop.tenureMonths} months` : "—"}</dd><dt>Annual rate</dt><dd>{shop.rateBps ? `${(shop.rateBps / 100).toFixed(1)}%` : "—"}</dd><dt>Cadence</dt><dd>{shop.cadence}</dd><dt>Repayment</dt><dd>{shop.weeklyRepayment ? `${paiseToInr(shop.weeklyRepayment)} weekly` : "—"}</dd><dt>Maximum weekly capacity</dt><dd>{shop.maxEmi ? paiseToInr(shop.maxEmi) : "—"}</dd></dl>{shop.principal > 0 && shop.principal < shop.requestedAmount && <p className="dashboard-counteroffer">Counteroffer below the requested amount.</p>}</section>
-            <section className="dashboard-detail-card"><h2>Why this result</h2><ul>{shop.drivers.map((driver) => <li key={driver}>{driver}</li>)}</ul><h3>Conditions and next steps</h3>{shop.conditions.length ? <ul>{shop.conditions.map((condition) => <li key={condition}>{condition}</li>)}</ul> : <p>No additional conditions in this fixture.</p>}</section>
-          </div>
-
-          <section className="dashboard-table-section"><div className="dashboard-card-heading"><div><h2>Sample applications</h2><p>Explore how different evidence affects the displayed outcome.</p></div><Link to="/queue">View queue →</Link></div><div className="dashboard-table-scroll"><table><thead><tr><th scope="col">Shop</th><th scope="col">Evidence</th><th scope="col">Requested</th><th scope="col">Proposed</th><th scope="col">Status</th></tr></thead><tbody>{examples.map((item) => <tr key={item.id}><th scope="row"><Link to={`/application/${item.id}`}>{item.name}</Link></th><td>{item.rails.map((rail) => rail.type.toUpperCase()).join(" · ")}</td><td>{paiseToInr(item.requestedAmount)}</td><td>{item.principal ? paiseToInr(item.principal) : "—"}</td><td>{verdictLabel(item.verdict)}</td></tr>)}</tbody></table></div></section>
-          <p className="dashboard-chart-note">Seed twin comparison: {twinSame ? "same verdict, principal, rate, tenure and cadence." : "terms differ; review the fixtures."} This does not establish model fairness.</p>
-        </main>
-      </div>
-    </div>
-  );
+function ReportView({ report }) {
+  return <div className="dashboard-readable dashboard-report">
+    <h3>Assessment report · {report.shop_name}</h3>
+    <p>Synthetic demo data · policy {report.versions?.policy || "unknown"} · assessed {report.assessed_at?.slice(0, 10) || "date unknown"}</p>
+    <p>{report.explanation?.lender || "Explanation unavailable"}</p>
+    <dl>
+      <dt>Requested amount</dt><dd>{paiseToInr(report.requested_amount_paise)}</dd>
+      <dt>Policy verdict</dt><dd>{verdictLabel(report.verdict)}</dd>
+      <dt>Proposed principal</dt><dd>{paiseToInr(report.terms.principal_paise)}</dd>
+      <dt>Maximum policy principal</dt><dd>{report.capacity?.max_principal_paise ? paiseToInr(report.capacity.max_principal_paise) : "Unavailable"}</dd>
+      <dt>Lean weekly surplus</dt><dd>{paiseToInr(report.capacity?.lean_surplus_paise || 0)}</dd>
+      <dt>Maximum weekly installment</dt><dd>{paiseToInr(report.capacity?.max_emi_paise || 0)}</dd>
+      <dt>Annual rate</dt><dd>{report.terms.rate_bps / 100}%</dd>
+      <dt>Tenure</dt><dd>{report.terms.tenure_months} months</dd>
+      <dt>Repayment cadence</dt><dd>{report.terms.cadence}</dd>
+      <dt>Installment</dt><dd>{report.terms.total_repayment_paise ? paiseToInr(report.terms.repayment_amount_paise) : "Unavailable"}</dd>
+      <dt>Total repayment</dt><dd>{report.terms.total_repayment_paise ? paiseToInr(report.terms.total_repayment_paise) : "Unavailable"}</dd>
+      <dt>Total interest</dt><dd>{report.terms.total_interest_paise ? paiseToInr(report.terms.total_interest_paise) : "Unavailable"}</dd>
+    </dl>
+    <p>Operating evidence: {report.rails?.map((rail) => `${rail.type.toUpperCase()} (${rail.trustClass}, ${rail.provenance})`).join(", ") || "None"}.</p>
+    {report.conditions?.length > 0 && <p>Conditions: {report.conditions.join("; ")}.</p>}
+    {report.effective_action && <p>Recorded lender action: {report.effective_action.action.replaceAll("_", " ")}. {report.effective_action.reason}</p>}
+    <p>This synthetic assessment is not a final credit decision or disbursal.</p>
+    <button className="btn btn-secondary dashboard-print" onClick={() => window.print()}>Print report</button>
+  </div>;
 }

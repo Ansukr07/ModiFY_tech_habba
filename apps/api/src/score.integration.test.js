@@ -64,6 +64,8 @@ test("score pdf-only UNVERIFIED and kirana offer; stress does not replace decisi
   assert.equal(stress.json.data.scenario_only, true);
   const again = await lender("GET", `/api/applications/${kApp.json.data._id}`);
   assert.equal(again.json.data.decision._id, id);
+  assert.equal(again.json.data.reconciliation.gst_sales_paise, 50000000);
+  assert.ok(again.json.data.reconciliation.upi_credits_paise > 0);
   assert.equal(kScore.json.data.provenance, "synthetic");
   assert.equal(pdfScore.json.data.provenance, "synthetic");
 
@@ -72,6 +74,13 @@ test("score pdf-only UNVERIFIED and kirana offer; stress does not replace decisi
 
   const audit = await lender("GET", `/api/applications/${kApp.json.data._id}/audit`);
   assert.ok(audit.json.items.some((e) => e.action === "score" && e.ok));
+  const reduced = await lender("POST", `/api/applications/${kApp.json.data._id}/override`, {
+    action: "reduce_terms", reason: "Conservative first loan", proposed_terms: { principal_paise: 1000000 },
+  }, { "Idempotency-Key": "reduce-k" });
+  assert.equal(reduced.status, 200);
+  const reducedView = await lender("GET", `/api/applications/${kApp.json.data._id}`);
+  assert.equal(reducedView.json.data.latest_action.effective.principal_paise, 1000000);
+  assert.ok(reducedView.json.data.latest_action.audit_reference);
 });
 
 test("idempotency and fairness twins", async () => {
@@ -124,6 +133,16 @@ test("idempotency and fairness twins", async () => {
     { "Idempotency-Key": "ov-1" }
   );
   assert.equal(ov.status, 200);
+  const reviewed = await lender("GET", `/api/applications/${a1.json.data._id}`);
+  assert.equal(reviewed.json.data.application.status, "reviewed");
+  assert.equal(reviewed.json.data.latest_action.action, "decline");
+  assert.equal(reviewed.json.data.latest_action.effective.verdict, "DECLINE");
+  const queue = await lender("GET", "/api/applications");
+  const row = queue.json.items.find((item) => item._id === a1.json.data._id);
+  assert.equal(row.shop_name, "Lakshmi Stores (twin A)");
+  assert.equal(row.effective_verdict, "DECLINE");
+  const report = await lender("GET", `/api/applications/${a1.json.data._id}/report`);
+  assert.equal(report.json.data.effective_action.action, "decline");
   const aud2 = await lender("GET", `/api/applications/${a1.json.data._id}/audit`);
   assert.ok(aud2.json.items.some((e) => e.action === "override" && e.ok));
 });

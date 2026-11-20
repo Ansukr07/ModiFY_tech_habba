@@ -35,8 +35,8 @@ class StressIn(BaseModel):
     cashflows: list[dict] = Field(default_factory=list)
     requested_amount_paise: int
     policy_version: str = "v1"
-    lean_inflow_delta_pct: float
-    outflow_delta_pct: float = 0
+    lean_inflow_delta_pct: float = Field(ge=-48, le=0)
+    outflow_delta_pct: float = Field(default=0, ge=0, le=30)
     base_decision_id: str | None = None
 
 

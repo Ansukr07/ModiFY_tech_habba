@@ -1,0 +1,28 @@
+flowchart LR
+  subgraph WEB["React 19 + Vite"]
+    direction TB
+    A["Owner application<br/>Shop details, demo rails<br/>Requested amount in paise"]
+    B["Lender workspace<br/>Queue, evidence, assessment<br/>Scenarios, report and audit"]
+    C["Browser API client<br/>Credentialed JSON requests<br/>Cookie session"]
+    A --> C
+    B --> C
+  end
+  subgraph API["Express API :4000"]
+    direction TB
+    D["Session, role and ownership<br/>Reject bureau fields<br/>Validate idempotency and revision"]
+    E["Load application bundle<br/>Shop, rails and cashflows<br/>Call scoring with 8-second timeout"]
+    F["Persist audit, then decision<br/>Update latest decision and status<br/>Cache idempotent response"]
+    D --> E --> F
+  N["Side paths<br/>No verified rail: UNVERIFIED<br/>Policy failure: DECLINE<br/>Service failure: audit + retryable 503<br/>Scenario: rescore copy, base unchanged<br/>Override: restricted action + reason + audit"]
+    F -.-> N
+  end
+  subgraph SCORE["FastAPI :8000 + persistence"]
+    direction TB
+    G["POST /internal/agent: scoring alias<br/>Weekly features and evidence gates<br/>Authenticity, then stress heuristics"]
+    H["Deterministic underwriting<br/>Lean surplus, haircut, capped principal<br/>Terms, drivers, template explanation"]
+    I[("MongoDB / memory fallback<br/>Applications, rails, cashflows<br/>Decisions, overrides and audit")]
+    G --> H
+    H --> I
+  end
+  WEB -->|"HTTP"| API
+  API -->|"Scoring"| SCORE

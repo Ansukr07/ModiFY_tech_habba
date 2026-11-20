@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+<rect width="1920" height="1080" fill="#080B10"/>
+<style>text{font-family:Arial,sans-serif;fill:#E9EEF5}.title{font-size:46px;font-weight:bold;fill:#92D050}.sub{font-size:24px;fill:#B5C2D2}.heading{font-size:24px;font-weight:bold;fill:#00B8E8}.body{font-size:23px}.lane{font-size:22px;fill:#92D050;font-weight:bold}</style>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#92D050"/></marker></defs>
+<text x="60" y="73" font-family="Arial" font-size="46" font-weight="700" fill="#92D050">PROPOSED TRAINING AND AGENT ARCHITECTURE</text>
+<text x="60" y="117" font-family="Arial" font-size="23" font-weight="400" fill="#B5C2D2">Target design from spec-new.md  /  Offline training is separate from application inference</text>
+<text x="60" y="183" font-family="Arial" font-size="22" font-weight="700" fill="#92D050">01  OFFLINE MODEL B TRAINING</text>
+<rect x="60" y="205" width="414" height="184" rx="12" fill="#18212D" stroke="#36506B" stroke-width="2"/>
+<text x="79" y="243" font-family="Arial" font-size="24" font-weight="700" fill="#00B8E8">Berka data + features</text>
+<text x="79" y="281" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Czech bank transactions, CZK</text>
+<text x="79" y="310" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Canonical weekly cash-flow series</text>
+<text x="79" y="339" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Scale-free features; no demographics</text>
+<path d="M480,296 H505" fill="none" stroke="#92D050" stroke-width="3"/><path d="M503,289 L513,296 L503,303 Z" fill="#92D050"/>
+<rect x="522" y="205" width="414" height="184" rx="12" fill="#18212D" stroke="#36506B" stroke-width="2"/>
+<text x="541" y="243" font-family="Arial" font-size="24" font-weight="700" fill="#00B8E8">Labels and account split</text>
+<text x="541" y="281" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Stress: next 4-week net &lt; EMI ref</text>
+<text x="541" y="310" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">EMI ref = 35% of monthly inflow</text>
+<text x="541" y="339" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">70 / 15 / 15 account split; seed 42</text>
+<path d="M942,296 H967" fill="none" stroke="#92D050" stroke-width="3"/><path d="M965,289 L975,296 L965,303 Z" fill="#92D050"/>
+<rect x="984" y="205" width="414" height="184" rx="12" fill="#18212D" stroke="#36506B" stroke-width="2"/>
+<text x="1003" y="243" font-family="Arial" font-size="24" font-weight="700" fill="#00B8E8">Training and calibration</text>
+<text x="1003" y="281" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Logistic regression baseline</text>
+<text x="1003" y="310" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Histogram gradient boosting</text>
+<text x="1003" y="339" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Grouped CV; validation calibration</text>
+<path d="M1404,296 H1429" fill="none" stroke="#92D050" stroke-width="3"/><path d="M1427,289 L1437,296 L1427,303 Z" fill="#92D050"/>
+<rect x="1446" y="205" width="414" height="184" rx="12" fill="#18212D" stroke="#36506B" stroke-width="2"/>
+<text x="1465" y="243" font-family="Arial" font-size="24" font-weight="700" fill="#00B8E8">Evaluation and artifacts</text>
+<text x="1465" y="281" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">ROC-AUC, PR-AUC and Brier</text>
+<text x="1465" y="310" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Class balance + loan sanity check</text>
+<text x="1465" y="339" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Joblib + metadata + model card</text>
+<path d="M1842,389 V418 H38 V539 H54" fill="none" stroke="#92D050" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="60" y="447" font-family="Arial" font-size="22" font-weight="700" fill="#92D050">02  ONLINE LANGGRAPH: TYPED STATE AND ALLOWLISTED TOOLS</text>
+<rect x="60" y="469" width="414" height="184" rx="12" fill="#18212D" stroke="#36506B" stroke-width="2"/>
+<text x="79" y="507" font-family="Arial" font-size="24" font-weight="700" fill="#00B8E8">Validate and build features</text>
+<text x="79" y="545" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Pin input, schema and policy versions</text>
+<text x="79" y="574" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Check provenance, rails and identity</text>
+<text x="79" y="603" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Normalize weekly financial evidence</text>
+<path d="M480,560 H505" fill="none" stroke="#92D050" stroke-width="3"/><path d="M503,553 L513,560 L503,567 Z" fill="#92D050"/>
+<rect x="522" y="469" width="414" height="184" rx="12" fill="#18212D" stroke="#36506B" stroke-width="2"/>
+<text x="541" y="507" font-family="Arial" font-size="24" font-weight="700" fill="#00B8E8">Stress + authenticity tools</text>
+<text x="541" y="545" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Model B first; load saved artifacts</text>
+<text x="541" y="574" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">B-inflow or B-full by outflow rail</text>
+<text x="541" y="603" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Model A or explicit authenticity rules</text>
+<path d="M942,560 H967" fill="none" stroke="#92D050" stroke-width="3"/><path d="M965,553 L975,560 L965,567 Z" fill="#92D050"/>
+<rect x="984" y="469" width="414" height="184" rx="12" fill="#18212D" stroke="#36506B" stroke-width="2"/>
+<text x="1003" y="507" font-family="Arial" font-size="24" font-weight="700" fill="#00B8E8">Investigate exceptions</text>
+<text x="1003" y="545" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Reconcile GST, bank and UPI gaps</text>
+<text x="1003" y="574" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Review concentration and invoices</text>
+<text x="1003" y="603" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Request missing evidence if needed</text>
+<path d="M1404,560 H1429" fill="none" stroke="#92D050" stroke-width="3"/><path d="M1427,553 L1437,560 L1427,567 Z" fill="#92D050"/>
+<rect x="1446" y="469" width="414" height="184" rx="12" fill="#18212D" stroke="#36506B" stroke-width="2"/>
+<text x="1465" y="507" font-family="Arial" font-size="24" font-weight="700" fill="#00B8E8">Deterministic underwriting</text>
+<text x="1465" y="545" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Lean month = worst 4-week net</text>
+<text x="1465" y="574" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">÷ 4 × 52 / 12; apply policy haircut</text>
+<text x="1465" y="603" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Compute EMI, principal and terms</text>
+<path d="M1842,653 V682 H38 V803 H54" fill="none" stroke="#92D050" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="60" y="711" font-family="Arial" font-size="22" font-weight="700" fill="#92D050">03  DELIVERY, SAFETY AND SEPARATE EVALUATION</text>
+<rect x="60" y="733" width="414" height="184" rx="12" fill="#18212D" stroke="#36506B" stroke-width="2"/>
+<text x="79" y="771" font-family="Arial" font-size="24" font-weight="700" fill="#00B8E8">Grounded explanation</text>
+<text x="79" y="809" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Agent explains drivers + counteroffer</text>
+<text x="79" y="838" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">All figures come from typed tools</text>
+<text x="79" y="867" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Template fallback if LLM fails</text>
+<path d="M480,824 H505" fill="none" stroke="#92D050" stroke-width="3"/><path d="M503,817 L513,824 L503,831 Z" fill="#92D050"/>
+<rect x="522" y="733" width="414" height="184" rx="12" fill="#18212D" stroke="#36506B" stroke-width="2"/>
+<text x="541" y="771" font-family="Arial" font-size="24" font-weight="700" fill="#00B8E8">Audit and lender review</text>
+<text x="541" y="809" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Log input hash, provenance, versions</text>
+<text x="541" y="838" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Write failure: retry, no completion</text>
+<text x="541" y="867" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Lender owns the final credit decision</text>
+<path d="M942,824 H967" fill="none" stroke="#92D050" stroke-width="3"/><path d="M965,817 L975,824 L965,831 Z" fill="#92D050"/>
+<rect x="984" y="733" width="414" height="184" rx="12" fill="#18212D" stroke="#36506B" stroke-width="2"/>
+<text x="1003" y="771" font-family="Arial" font-size="24" font-weight="700" fill="#00B8E8">Early exits and failures</text>
+<text x="1003" y="809" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Missing verified rail: UNVERIFIED</text>
+<text x="1003" y="838" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Identity failure: review or decline</text>
+<text x="1003" y="867" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Model / schema error: fail closed</text>
+<path d="M1404,824 H1429" fill="none" stroke="#92D050" stroke-width="3"/><path d="M1427,817 L1437,824 L1427,831 Z" fill="#92D050"/>
+<rect x="1446" y="733" width="414" height="184" rx="12" fill="#18212D" stroke="#36506B" stroke-width="2"/>
+<text x="1465" y="771" font-family="Arial" font-size="24" font-weight="700" fill="#00B8E8">Separate evaluation tools</text>
+<text x="1465" y="809" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Exact financial twins: equal terms</text>
+<text x="1465" y="838" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Baseline on labelled demo cohort</text>
+<text x="1465" y="867" font-family="Arial" font-size="20" font-weight="400" fill="#E9EEF5">Scenario only: no retraining</text>
+<text x="60" y="1008" font-family="Arial" font-size="23" font-weight="400" fill="#B5C2D2">Proposed capability. Current repository uses heuristic-v0 and a scoring alias rather than a LangGraph execution.</text>
+<text x="60" y="1039" font-family="Arial" font-size="23" font-weight="400" fill="#B5C2D2">Berka is proxy data, not Indian MSME validation. Model A labels remain open. Agents cannot change policy or approve credit.</text>
+</svg>

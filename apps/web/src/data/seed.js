@@ -1,4 +1,4 @@
-/** Synthetic demo shops — provenance is always synthetic. */
+/** Sample shops — provenance is always synthetic. */
 
 export const SHOPS = [
   {

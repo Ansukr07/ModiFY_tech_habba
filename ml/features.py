@@ -156,6 +156,8 @@ def build_features(shop: dict, rails: list[dict], cashflows: list[dict]) -> dict
         "invoice_count": sum(1 for r in rails if r.get("type") == "gst"),
         "weeks_on_vpa": history_weeks,
         "worst_4_week_net_paise": worst,
+        "worst_4_week_start": (nets[rolls.index(worst)][0].date().isoformat() if rolls and len(nets) >= 4 else (nets[0][0].date().isoformat() if nets else None)),
+        "worst_4_week_end": ((nets[rolls.index(worst) + 3][0] + timedelta(days=6)).date().isoformat() if rolls and len(nets) >= 4 else (nets[0][0] + timedelta(days=6)).date().isoformat() if nets else None),
         "typical_4_week_net_paise": typical,
         "weekly_inflows": weekly_in,
     }

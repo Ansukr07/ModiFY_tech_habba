@@ -19,7 +19,8 @@ export function Gate() {
         <header className="landing-nav">
           <Link className="landing-brand" to="/" aria-label="ZeroCIBIL home"><Mark size={32} /><span>ZeroCIBIL</span></Link>
           <nav aria-label="Primary">
-            <a href="#features">Features</a>
+            <a href="#features">How it works</a>
+            <a href="#evidence">Evidence</a>
             <Link to="/login">For owners</Link>
             <Link to="/login?role=lender">For lenders</Link>
 
@@ -29,7 +30,6 @@ export function Gate() {
 
         <main>
           <section className="landing-hero" aria-labelledby="landing-title">
-            <p className="landing-proof">SYNTHETIC DEMO <span aria-hidden="true">✦ ✦ ✦ ✦ ✦</span></p>
             <h1 id="landing-title">Empowering your<br />financial future</h1>
             <p className="landing-subtitle">Credit terms shaped by your shop’s verified operations, even without a bureau file.</p>
             <div className="landing-actions">
@@ -89,7 +89,38 @@ export function Gate() {
             <article><span>02</span><h3>Find the lean period</h3><p>The weakest four weeks shape repayment capacity.</p></article>
             <article><span>03</span><h3>Review the terms</h3><p>A lender can inspect the amount, rate, tenure and reasons.</p></article>
           </section>
+          <section className="landing-evidence" id="evidence" aria-labelledby="evidence-title">
+            <div>
+              <h2 id="evidence-title">A clearer picture of the shop.</h2>
+              <p>ZeroCIBIL uses operating signals to make a case visible when a bureau file is not. Lenders can see what supports a decision and what still needs review.</p>
+            </div>
+            <dl>
+              <div><dt>Account activity</dt><dd>Cashflow across strong and lean weeks</dd></div>
+              <div><dt>Merchant payments</dt><dd>Shop transactions from simulated UPI rails</dd></div>
+              <div><dt>GST summary</dt><dd>Business activity to support the assessment</dd></div>
+              <div><dt>Uploaded PDFs</dt><dd>Visible for context, never treated as verified</dd></div>
+            </dl>
+          </section>
+          <section className="landing-cta" aria-labelledby="landing-cta-title">
+            <h2 id="landing-cta-title">See the shop beyond its bureau file.</h2>
+            <p>Explore a sample owner journey or review the evidence as a lender.</p>
+            <div className="landing-actions">
+              <Link className="landing-button landing-button-dark" to="/login">Start as an owner <Arrow /></Link>
+              <Link className="landing-button landing-button-light" to="/login?role=lender">Review as a lender <Arrow /></Link>
+            </div>
+          </section>
         </main>
+        <footer className="landing-footer">
+          <Link className="landing-brand" to="/" aria-label="ZeroCIBIL home"><Mark size={28} /><span>ZeroCIBIL</span></Link>
+          <p>Credit decisions grounded in shop operations.</p>
+          <nav aria-label="Footer">
+            <a href="#features">How it works</a>
+            <a href="#evidence">Evidence</a>
+            <Link to="/login">Owner access</Link>
+            <Link to="/login?role=lender">Lender desk</Link>
+          </nav>
+          <small>Prototype demonstration · all sample outcomes are synthetic</small>
+        </footer>
       </div>
     </div>
   );
