@@ -78,6 +78,29 @@ export function Gate() {
           </div>
         </div>
       </section>
+      <section className="how-section" aria-labelledby="how-title">
+        <div className="how-intro">
+          <h2 id="how-title">A clearer path from shop activity to credit terms.</h2>
+          <p>ZeroCIBIL starts with evidence the shop can show, checks its weakest period, then presents terms a lender can review. Every example on this site uses synthetic data.</p>
+        </div>
+        <div className="how-grid">
+          <article>
+            <span className="how-number">01</span>
+            <h3>Verify the source</h3>
+            <p>Simulated AA, UPI and GST rails can support an assessment. A PDF upload stays unverified.</p>
+          </article>
+          <article>
+            <span className="how-number">02</span>
+            <h3>Find the lean period</h3>
+            <p>The weakest four weeks and operating outflows shape a repayment capacity.</p>
+          </article>
+          <article>
+            <span className="how-number">03</span>
+            <h3>Review the terms</h3>
+            <p>Principal, rate, tenure and repayment cadence stay visible with reasons for a lender to inspect.</p>
+          </article>
+        </div>
+      </section>
     </div>
   );
 }
