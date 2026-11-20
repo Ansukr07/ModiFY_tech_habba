@@ -53,6 +53,7 @@ export function Gate() {
               </div>
 
               <div className="landing-phone" aria-label="Sample ZeroCIBIL offer preview">
+                <div className="landing-phone-content">
                 <div className="landing-phone-status"><span>9:41</span><span className="landing-phone-notch" aria-hidden="true" /><span className="landing-signal" aria-hidden="true">▮▮▮ ▰</span></div>
                 <div className="landing-phone-header"><span aria-hidden="true">☰</span><span><Mark size={19} /> ZeroCIBIL</span><span className="landing-phone-dot" aria-hidden="true" /></div>
                 <p className="landing-phone-label">Sample offer from shop activity</p>
@@ -63,6 +64,7 @@ export function Gate() {
                   <div className="landing-rail-cards"><div><Mark size={17}/><span>UPI merchant</span><strong>Verified</strong></div><div><Mark size={17}/><span>GST summary</span><strong>Verified</strong></div></div>
                 </div>
                 <div className="landing-phone-feed"><strong>What set this amount</strong><p>Weakest four-week cashflow</p><p>Repayment capacity</p><p>Verified shop rails</p></div>
+                </div>
               </div>
 
               <div className="landing-transactions">

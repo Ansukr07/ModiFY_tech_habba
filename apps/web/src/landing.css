@@ -97,3 +97,4 @@
   .landing-transactions strong { grid-column:auto; font-size:11px; }
   .landing-avatar { width:32px; height:32px; font-size:9px; }
 }
+.landing-phone-content { zoom:.75; width:133.333%; transform-origin:top left; }
