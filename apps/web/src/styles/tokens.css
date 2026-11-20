@@ -1,0 +1,75 @@
+:root {
+  --paper: #ffffff;
+  --paper-2: #f6f6f4;
+  --ink: #111111;
+  --ink-2: #5c5c5c;
+  --line: #e8e8e4;
+  --lilac: #c4b5fd;
+  --lilac-2: #ede9fe;
+  --lilac-deep: #7c5cbf;
+  --blue-tag: #3b6bff;
+  --yellow-tag: #f5e27a;
+  --gain: #147a3a;
+  --loss: #b42318;
+  --warn: #9a6700;
+  --display: "Source Serif 4", Georgia, serif;
+  --ui: Sora, system-ui, sans-serif;
+  --shadow: 0 12px 40px rgba(17, 17, 17, 0.06);
+  --radius-card: 22px;
+  --radius-pill: 999px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--ui);
+  color: var(--ink);
+  background: var(--paper);
+}
+
+::selection {
+  background: var(--lilac-2);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+.skip {
+  position: absolute;
+  left: 12px;
+  top: -44px;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 8px 12px;
+  border-radius: 8px;
+  z-index: 20;
+}
+
+.skip:focus {
+  top: 12px;
+}

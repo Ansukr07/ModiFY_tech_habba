@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Qredible — Automation that adapts to every team</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="hero">
+    <nav class="nav" aria-label="Primary">
+      <a class="brand" href="#">
+        <span class="logo" aria-hidden="true"></span>
+        Qredible
+      </a>
+      <ul class="nav-links">
+        <li><a href="#product">Product</a></li>
+        <li><a href="#use-cases">Use Cases</a></li>
+        <li><a href="#solutions">Solutions</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#resources">Resources</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a class="btn btn-ghost" href="#login">Login</a>
+        <a class="btn btn-white" href="#start">Get Started</a>
+      </div>
+    </nav>
+
+    <div class="hero-copy">
+      <p class="pill">
+        <span class="pill-dot" aria-hidden="true"></span>
+        99.9% Workflow reliability
+      </p>
+      <h1>Automation that<br />adapts to every team</h1>
+      <p class="lede">Every team runs processes that involve multiple tools, approvals, and manual steps.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-black" href="#use-cases">Explore Use Cases</a>
+        <a class="text-link" href="#tour">
+          <span class="play" aria-hidden="true">▷</span>
+          Take a product tour
+        </a>
+      </div>
+    </div>
+
+    <div class="app-preview" aria-hidden="true">
+      <aside class="sidebar">
+        <div class="sb-brand"><span class="logo sm"></span> Qredible</div>
+        <div class="search">⌕ Search</div>
+        <p class="sb-label">Workspace</p>
+        <p class="sb-item">⌂ Home</p>
+        <p class="sb-item on">⇄ Workflow</p>
+        <p class="sb-item">◷ Credentials</p>
+      </aside>
+      <section class="canvas">
+        <div class="crumbs">Projects / HR Management / <strong>All Workflows</strong></div>
+        <div class="wf-bar">
+          <div>
+            <span class="chev">▾</span> Employee Onboarding
+            <span class="draft">DRAFT</span>
+          </div>
+          <div class="wf-meta">
+            <span class="saved">Saved just now</span>
+            <span class="avatars">
+              <i class="av a1"></i><i class="av a2"></i><i class="av a3"></i>
+            </span>
+            <span class="ghost-sm">Save Draft</span>
+            <span class="pub">Publish</span>
+          </div>
+        </div>
+        <div class="graph">
+          <article class="node">
+            <header><i class="dot"></i> Trigger <span>⋯</span></header>
+            <p>New employee record created</p>
+          </article>
+          <span class="err">● Stop and notify HR</span>
+          <article class="node right">
+            <header class="orange"><i class="dot o"></i> Validate <b>×</b></header>
+            <p>Validate employee data</p>
+            <footer>Next Step <span>▾</span></footer>
+          </article>
+        </div>
+      </section>
+    </div>
+
+    <div class="hills" role="presentation"></div>
+    <ul class="logos" aria-label="Customers">
+      <li>✦ zantic</li>
+      <li>☁ BookStore</li>
+      <li>❖ Wager</li>
+      <li>◎ Unicoin</li>
+      <li>◈ Crona</li>
+      <li>✦ zantic</li>
+      <li>◇ Orbit</li>
+    </ul>
+  </header>
+
+  <main id="main">
+    <section class="departments" id="use-cases">
+      <p class="section-pill"><span class="gear" aria-hidden="true">⚙</span> Use cases</p>
+      <div class="dept-head">
+        <h2>Automation for<br />every department</h2>
+        <p>Qredible helps coordinate processes across departments while maintaining clarity and control.</p>
+      </div>
+
+      <div class="cards">
+        <article class="usecase">
+          <div class="orbits" aria-hidden="true">
+            <span class="bubble b1">💼</span>
+            <span class="line"></span>
+            <span class="bubble b2">$</span>
+          </div>
+          <h3>Business Operations</h3>
+          <p>Automatically routing actions and keeping operational processes moving.</p>
+        </article>
+
+        <article class="usecase finance">
+          <div class="mini-flow" aria-hidden="true">
+            <div class="mnode">
+              <header>⚡ Trigger</header>
+              <p>New employee record created</p>
+            </div>
+            <div class="mnode">
+              <header>◎ Extract Data</header>
+              <p>Capture invoice information</p>
+            </div>
+            <div class="mnode">
+              <header>✓ Validate</header>
+              <p>Validate employee data</p>
+              <div class="tags"><span>email</span><span>name</span><span>role</span><span>dept</span></div>
+            </div>
+            <span class="chip">🏷 good flow</span>
+          </div>
+          <h3>Finance &amp; Accounting</h3>
+          <p>Capture invoice data, validate purchase orders, and streamline financial approvals with automated processing.</p>
+        </article>
+      </div>
+
+      <article class="usecase wide sales" id="solutions">
+        <div class="chart" aria-hidden="true">
+          <p class="chart-title">Lead Qualification Trend</p>
+          <p class="chart-sub">+18% Conversion Increase</p>
+          <span class="lead-tag">124 leads</span>
+        </div>
+        <h3>Sales &amp; CRM</h3>
+        <p>Track lead qualification trends and automatically route new opportunities to the right sales teams.</p>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
