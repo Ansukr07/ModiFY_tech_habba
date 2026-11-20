@@ -26,7 +26,7 @@ export function OwnerStatus() {
         {shop.principal > 0 && (
           <>
             {shop.principal < shop.requestedAmount && <p className="muted">Sample counteroffer: you asked for {paiseToInr(shop.requestedAmount)}. This example proposes a smaller amount.</p>}
-            <p className="muted">{shop.tenureMonths} months · {(shop.rateBps / 100).toFixed(1)}% p.a. · {shop.cadence} repayment</p>
+            <p className="muted">{shop.tenureMonths} months · {(shop.rateBps / 100).toFixed(1)}% p.a. · {shop.cadence} repayment of {paiseToInr(shop.weeklyRepayment)} (sample)</p>
           </>
         )}
         {shop.conditions.length > 0 && <ul className="muted">{shop.conditions.map((condition) => <li key={condition}>{condition}</li>)}</ul>}

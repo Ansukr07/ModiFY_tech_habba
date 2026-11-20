@@ -26,7 +26,8 @@ export const SHOPS = [
     tenureMonths: 10,
     rateBps: 1600,
     cadence: "weekly",
-    maxEmi: 140000,
+    maxEmi: 350000,
+    weeklyRepayment: 300000,
     drivers: [
       "Worst month is 62% of a typical month",
       "Many small UPI payers — not one mule",
@@ -107,7 +108,8 @@ export const SHOPS = [
     tenureMonths: 6,
     rateBps: 1900,
     cadence: "weekly",
-    maxEmi: 82000,
+    maxEmi: 210000,
+    weeklyRepayment: 190000,
     drivers: ["GST and UPI disagree by 40%", "Lean month is 40% of typical"],
     conditions: ["Weekly debit", "Review GST mismatch in 30 days"],
     baseline: "DECLINE",
@@ -134,7 +136,8 @@ export const SHOPS = [
     tenureMonths: 10,
     rateBps: 1600,
     cadence: "weekly",
-    maxEmi: 140000,
+    maxEmi: 350000,
+    weeklyRepayment: 300000,
     drivers: ["Same cashflow as twin B"],
     conditions: ["Debit from merchant VPA"],
     baseline: "DECLINE",
@@ -161,7 +164,8 @@ export const SHOPS = [
     tenureMonths: 10,
     rateBps: 1600,
     cadence: "weekly",
-    maxEmi: 140000,
+    maxEmi: 350000,
+    weeklyRepayment: 300000,
     drivers: ["Same cashflow as twin A"],
     conditions: ["Debit from merchant VPA"],
     baseline: "DECLINE",
@@ -175,7 +179,8 @@ export function paiseToInr(paise) {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
-    maximumFractionDigits: 0,
+    minimumFractionDigits: paise % 100 ? 2 : 0,
+    maximumFractionDigits: 2,
   }).format(paise / 100);
 }
 

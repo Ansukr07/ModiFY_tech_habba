@@ -99,6 +99,8 @@ export function LenderDesk() {
               <dd>{shop.cadence}</dd>
               <dt>Maximum weekly repayment from lean surplus</dt>
               <dd>{shop.maxEmi ? paiseToInr(shop.maxEmi) : "—"}</dd>
+              <dt>Sample weekly repayment</dt>
+              <dd>{shop.weeklyRepayment ? paiseToInr(shop.weeklyRepayment) : "—"}</dd>
               <dt>Asked</dt>
               <dd>{paiseToInr(shop.requestedAmount)}</dd>
             </dl>
