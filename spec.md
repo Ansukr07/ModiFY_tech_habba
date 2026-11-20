@@ -3,9 +3,16 @@
 **Hackathon:** The Big Hack 2.0 (Bengaluru)  
 **Track:** 01 Finance  
 **Code:** F2  
-**Product name:** ZeroCIBIL  
-**Stack:** MERN + Python ML  
-**Edition:** Participant spec (internal). Not an official organiser document.
+**Product:** ZeroCIBIL  
+**Stack:** MERN + Python ML + LangGraph agents  
+**Edition:** Single participant spec. ML and agentic design below is the source of truth for underwriting.  
+**Supersedes:** `nidhi_ml_agentic_ai_spec.md` (content folded in; brand is ZeroCIBIL, not Nidhi).
+
+Three layers, never mixed:
+
+1. **Machine learning** — authenticity (`p_auth`) and lean-period stress (`p_stress`).
+2. **Deterministic underwriting** — lean-month capacity and versioned terms.
+3. **Agentic AI** — tools, exceptions, explanations, audit. An LLM must not approve a loan, invent figures, change predictions, or override policy.
 
 ---
 
@@ -26,48 +33,45 @@ India has crores of MSMEs (kirana stores, tailors, repair shops, small manufactu
 1. **Owners of small businesses with no formal credit history.**
 2. **Lenders** who must decide whether to lend, how much, and on what terms.
 
-The product is **two-sided**. A owner-only budget app or a lender-only score widget does not cover the PS.
+The product is **two-sided**. An owner-only budget app or a lender-only score widget does not cover the PS.
 
-### 1.3 The problem (verbatim intent)
+### 1.3 The problem
 
 Lenders cannot tell a **healthy** small business from a **risky** one when there is no credit history. Good businesses are **denied credit or overcharged**.
 
-### 1.4 The challenge (what we must answer)
+### 1.4 The challenge
 
 > Design a **fairer** way to decide **which** small businesses get credit, **how much** they get, and **on what terms**, when the business has **no formal credit history**.
-
-Three decisions, not one binary score:
 
 | Decision | Meaning |
 |---|---|
 | Which | Eligible vs decline vs “collect more data” |
 | How much | Principal / limit |
-| On what terms | Tenure, interest band, repayment cadence, conditions, step-up |
+| On what terms | Tenure, interest band, repayment schedule, conditions, step-up |
 
-### 1.5 Key terms (must appear correctly in UI and pitch)
+### 1.5 Key terms
 
 | Term | Definition (booklet) |
 |---|---|
 | **MSME** | Micro, small or medium enterprise, classified under Indian law by investment and turnover. |
 | **Credit history** | Record of past loans and repayments at bureaus such as CIBIL. |
-| **Credit-invisible** | Borrower with **no** credit history; bureau cannot issue a score. |
+| **Credit-invisible** | Borrower with **no** credit history; bureau cannot give a score. |
 | **Terms** | Interest rate, repayment schedule, and length of the loan. |
 
-### 1.6 Track 01 rule (applies to every Finance submission)
+### 1.6 Track 01 rule
 
-- Submission must be a **working prototype**.
-- **Synthetic data is allowed** where real data is not available.
-- **Say clearly** which data in the demo is real and which is synthetic.
-- Every cashflow, GST, and AA payload in v1 is **synthetic** unless we later add a real consented rail.
+- Working prototype.
+- Synthetic data allowed; **label real vs synthetic** on every screen.
+- v1 cashflow, GST, and AA payloads are **synthetic** unless a later consented rail is added.
 
-### 1.7 Judging map (100 points)
+### 1.7 Judging map (100)
 
-| Criterion | Weight | How F2 scores it |
+| Criterion | Weight | How ZeroCIBIL scores it |
 |---|---|---|
-| Innovation | 25 | Trust rails + **terms** (not yes/no) + fairness on same cashflow |
-| Technical depth | 25 | Dual models (authenticity + risk), lean-month capacity math, audit log |
-| Evidence | 20 | Baseline `no CIBIL → reject` vs our funded count + proxy default; labelled synthetic eval |
-| Impact | 15 | Kirana / women-owned MSME in Bengaluru; credit gap narrative |
+| Innovation | 25 | Trust rails + **terms** (not yes/no) + fairness twins + agent investigation (not LLM-as-underwriter) |
+| Technical depth | 25 | Dual models, leakage-safe training, capacity math, LangGraph tools, audit |
+| Evidence | 20 | Baseline `no CIBIL → reject` vs funded count + proxy stress on synthetic holdout |
+| Impact | 15 | Kirana / women-owned MSME in Bengaluru |
 | Presentation | 15 | 3-minute two-role demo |
 
 ---
@@ -79,239 +83,119 @@ We grant **terms the shop’s lean month can pay**, using **rails that are hard 
 
 Credit-invisible ≠ document-invisible. Self-uploaded bank PDFs are **unverified** and **must not set the limit**.
 
-Product name: **ZeroCIBIL**.
+Brand: **ZeroCIBIL**. The lender remains accountable for the final credit decision.
+
+### 2.1 Design principles
+
+1. Authenticity is separate from credit risk.
+2. A bureau score is not an input.
+3. A PDF is not a verified rail.
+4. Capacity is transparent arithmetic, shown to the lender.
+5. Risk changes haircut and rate; it does not replace capacity math.
+6. Agents call tools; they do not fabricate facts.
+7. Every result is traceable (model, policy, provenance, input hash, override).
+8. Fairness is tested on twins, not asserted.
+9. `UNVERIFIED` is a valid outcome.
+10. Synthetic metrics are not real-world validation.
 
 ---
 
 ## 3. Goals and non-goals
 
-### 3.1 Goals
+### 3.1 In scope (hackathon MVP)
 
-- Decide **which / how much / terms** with **zero CIBIL**.
-- Separate **data authenticity** from **credit risk**.
-- Show **why** (top drivers) and **what if** (lean-week sliders).
-- Prove **fairness**: same cashflow, different protected attributes → same offer.
-- Label **synthetic vs real** on every screen.
-- Beat an explicit **baseline** with numbers.
+- Two supervised models: **A authenticity**, **B stress**.
+- Synthetic generator with labelled archetypes (≥200 shops).
+- Shared Python feature builder + schema + unit tests.
+- Offline train/eval; FastAPI scoring; `/stress-test` without retrain.
+- Deterministic lean-month capacity and versioned terms.
+- Controlled LangGraph workflow (analysis, exceptions, explanation, audit).
+- Evidence dashboard vs `no CIBIL → decline`.
+- Fairness twins.
+- Provenance labels on every rail.
 
-### 3.2 Non-goals (hackathon)
+### 3.2 Out of scope
 
-- Real bank login, Account Aggregator production, GST portal login, Aadhaar, CKYC.
-- Disbursal, NACH, collections ops, legal agreements.
-- Consumer personal loans, credit cards, BNPL for individuals.
+- Production AA / GST / Aadhaar / CKYC / NACH / disbursal.
+- Real default prediction.
+- LLM as the credit decision.
+- Fraud accusation from an anomaly score alone.
+- CV claims about detecting every forged PDF.
 - Blockchain (Track 2).
-- “ChatGPT decides the loan.”
-- Scanning or using anyone’s real statements without consent (we only use seed synthetic shops).
+- Consumer personal loans.
 
 ---
 
-## 4. Users and jobs-to-be-done
+## 4. Users
 
-### 4.1 Primary user A — MSME owner (applicant)
+**Owner (demo):** Kirana in Bengaluru, UPI QR, never had a formal loan, no CIBIL. Apply without a bureau file; see verified vs unverified; PDFs do not unlock a full limit; see status.
 
-**Persona (demo):** Kirana owner in Bengaluru, UPI QR on the counter, never had a formal loan, no CIBIL, optional Udyam.
+**Lender:** Thin-file queue; no bureau banner; trust + capacity + terms + drivers; stress slider; override with reason; baseline comparison.
 
-**Jobs:**
-
-- Apply without a bureau file.
-- See what data is **verified** vs **unverified**.
-- Understand that PDFs alone will not unlock a full limit.
-- See application status (pending / offer / declined / need more rails).
-
-### 4.2 Primary user B — Lender credit officer
-
-**Persona:** Small-ticket MSME lender / NBFC officer.
-
-**Jobs:**
-
-- Open a queue of thin-file applications.
-- See “no bureau file” immediately.
-- See **data trust**, **capacity**, **proposed terms**, **drivers**.
-- Stress-test lean weeks.
-- Override with a reason (audit).
-- Compare to baseline policy.
-
-### 4.3 Secondary (pitch only)
-
-- Auditor: every decision is logged.
-- Policy: fairness report on synthetic cohort.
+**Auditor / policy:** Decision log; fairness report on synthetic twins.
 
 ---
 
-## 5. Features (PS-aligned)
+## 5. Product features (PS-aligned)
 
-Each feature traces to *which / how much / terms / fairer / no credit history / both users*.
+### 5.1–5.3 Application and rails
 
-### 5.1 Thin-file application (owner)
-
-**Description:** Owner creates a shop profile **without** CIBIL/PAN-as-score. Fields: shop name, category, city, years operating, Udyam number (optional), merchant VPA (synthetic).
-
-**PS link:** Credit-invisible applicant; MSME.
-
-### 5.2 Explicit “no credit history” state
-
-**Description:** Owner and lender UIs show a persistent banner: **No credit bureau file — underwriting from operations.** Never invent a fake CIBIL number.
-
-**PS link:** Credit-invisible definition.
-
-### 5.3 Dual-rail data intake
-
-**Description:** Attach data as **verified rails** (simulated) vs **unverified uploads**.
+Owner profile **without** CIBIL. Banner: **No credit bureau file — underwriting from operations.** Never invent a fake CIBIL number.
 
 | Rail | Trust class | Role in limit |
 |---|---|---|
 | Account Aggregator JSON (simulated) | Verified | Can drive terms |
 | UPI merchant / QR credits (simulated) | Verified | Can drive terms |
 | GSTIN + GSTR-1 / 3B summary (simulated) | Verified | Can drive terms + recon |
-| Udyam | Supporting | Identity, not cashflow |
+| Udyam | Supporting | Identity only |
 | Bank PDF / photo / Excel / typed totals | **Unverified** | Must **not** set full limit |
 
-**PS link:** Lenders cannot measure risk; we measure from operations, not from honour-system PDFs.
+### 5.4 Data trust panel
 
-### 5.4 Data trust / credibility panel (lender)
+Per application: rail status, mismatches, `p_auth`. Identity match; GST vs UPI vs cash; mule heuristics. **No verified rail → `UNVERIFIED` or tiny test limit**, never a large principal.
 
-**Description:** Per application, show rail status, mismatches, and `P(data belongs to this shop)`.
+### 5.5–5.8 Cashflow, capacity, terms, verdict
 
-- Identity match: GSTIN / Udyam / VPA vs applicant.
-- Cross-rail consistency: GST taxable sales vs UPI credits vs claimed cash.
-- Replay / mule heuristics: one payer dominance, round-number spikes, 90 “perfect” days after empty history.
-- **Policy:** no verified rail → outcome **Collect more data** or **tiny test limit**, never a large principal.
+90-day board with **SYNTHETIC** watermark. Max EMI from worst 4-week surplus × haircut. Asked amount above max → **counter-offer**.
 
-**PS link:** Fairer *and* safer than treating uploads as truth. Innovation + technical depth.
+Outputs: principal, tenure, rate band, cadence (weekly default), conditions, optional step-up. Risk only moves haircut and rate.
 
-### 5.5 Cashflow board (90 days)
+| Code | When |
+|---|---|
+| `DECLINE` | Identity/fraud fail, capacity ≈ 0 |
+| `UNVERIFIED` | No verified rail / PDF-only |
+| `THIN_FILE` | Verified, short history |
+| `STANDARD` | Capacity + trust pass |
+| `STEP_UP` | Conservative start, increase after N on-time weeks |
 
-**Description:** Weekly/daily inflow/outflow chart. Lean windows highlighted. **SYNTHETIC** watermark.
+### 5.9–5.16 Explainability, slider, fairness, evidence, audit, owner status, seed gallery
 
-**PS link:** Healthy vs risky business when history is missing.
+Top 3 drivers with observed values. Stress slider **recomputes capacity, does not retrain**. Fairness: same cashflow, change gender/area → **₹0 principal delta**. Baseline: everyone invisible → funds 0. Override + audit log. Owner copy is non-stigmatising.
 
-### 5.6 Lean-month capacity engine
-
-**Description:** Compute max EMI from **worst 4-week surplus × haircut(trust)**. Convert to max principal given rate and tenure. Asked amount above max → **counter-offer**, not character judgement.
-
-**PS link:** How much; terms that survive a bad month.
-
-### 5.7 Terms engine (not a single score)
-
-**Description:** Output:
-
-- Eligible principal (₹)
-- Tenure (months)
-- Interest band (% p.a.)
-- Repayment cadence (weekly recommended for irregular UPI)
-- Conditions (e.g. cap at 1.5× median month; debit from merchant VPA)
-- Optional **step-up**: start small, increase after N on-time weeks
-
-Risk band only **moves haircut and rate**. It does not replace cashflow math.
-
-**PS link:** “Terms” as defined in the booklet.
-
-### 5.8 Four-way verdict (which)
-
-| Code | Verdict | When |
-|---|---|---|
-| `DECLINE` | Decline | Fraud/identity fail, capacity ≈ 0 |
-| `UNVERIFIED` | Collect more data / PDF-only block | No verified rail |
-| `THIN_FILE` | Thin-file offer | Verified but short history |
-| `STANDARD` | Standard offer | Capacity + trust pass |
-| `STEP_UP` | Step-up facility | Standard but conservative start |
-
-Binary approve/reject is **insufficient** for the PS.
-
-### 5.9 Explainability
-
-**Description:** Top 3 drivers (e.g. lean-month depth, payer concentration, GST–UPI gap). Lender can read without opening a notebook.
-
-**PS link:** Technical depth; presentation; trust of the lender-user.
-
-### 5.10 Stress slider (“what if”)
-
-**Description:** Lender drags “lean weeks worse / better.” Terms reprice live. Demo-critical.
-
-**PS link:** Distinguishing healthy vs risky under income variability.
-
-### 5.11 Fairness check
-
-**Description:** Hold cashflow fixed; toggle gender / area flags (synthetic). Offer must **not** move. Log the check. Women-owned gap from PS is **impact narrative**, not a reason to charge more.
-
-**PS link:** “Fairer way”; 35% gap for women-owned MSMEs.
-
-### 5.12 Baseline comparison (evidence)
-
-**Description:** Policy `if no_cibil then reject`. Dashboard: shops funded under baseline vs us; proxy default on labelled synthetic holdout.
-
-**PS link:** Track evidence criterion; Finance synthetic-data rule.
-
-### 5.13 Human override + audit log
-
-**Description:** Officer can change terms with a reason. Immutable-enough log: inputs hash, model versions, terms, override. Not Track 2 blockchain; Mongo + append-only collection is enough.
-
-**PS link:** Lender as a user; technical depth.
-
-### 5.14 Synthetic data labelling (compliance)
-
-**Description:** Badge on every chart, API field `data_provenance: synthetic | simulated_rail | real`. Pitch slide repeats this.
-
-**PS link:** Track 01 rule.
-
-### 5.15 Owner status view
-
-**Description:** After apply: pending / offer summary (amount, tenure, rate band) / declined with **non-stigmatising** copy (“we could not verify operations” vs “you are a bad business”).
-
-**PS link:** Owner as affected user.
-
-### 5.16 Seed gallery for demo
-
-**Description:** At least:
-
-- **Clean kirana:** AA + UPI + GST aligned → STANDARD offer.
-- **PDF-only shop:** UNVERIFIED, no full limit.
-- **Mule-like:** high inflow, one payer, round numbers → DECLINE or severe down-term.
-- **GST mismatch:** credits vs GSTR gap → haircut or unverified.
-- **Women-owned, same cashflow as a male-owned twin:** same terms (fairness).
-- **Volatile but real UPI:** THIN_FILE, weekly debit, smaller ticket.
-
-**PS link:** Healthy vs risky when both have no CIBIL.
+**Seed:** clean kirana; PDF-only; mule-like; GST mismatch; fairness twins; volatile genuine UPI (`THIN_FILE`).
 
 ---
 
-## 6. Decision basis (underwriting policy)
+## 6. Decision layers (policy)
 
-### 6.1 Layer A — Hard gates (no ML)
+**A — Hard gates (no ML):** incomplete identity; zero verified rails; severe authenticity; max EMI ≈ 0.
 
-Fail → `DECLINE` or `UNVERIFIED`:
+**B — Authenticity:** `p_auth` + flags. Below `low_below` → decline/unverified. Mid band → haircut / more data. High → capacity path. Thresholds live in `models/meta.json`.
 
-1. Shop identity incomplete or contradictory.
-2. Zero verified rails.
-3. High authenticity risk (mule / replay / mismatch above threshold).
-4. Max EMI ≈ 0 after haircut.
-
-### 6.2 Layer B — Authenticity score
-
-`P(shop_owned_data)` from heuristics + Model A.
-
-- Below `T_auth_low` → decline or unverified.
-- Between thresholds → extra haircut.
-- High → full capacity path.
-
-### 6.3 Layer C — Capacity (deterministic, shown to judges)
+**C — Capacity (deterministic):**
 
 ```
-lean_surplus = worst_4_week_net_inflow / 4   # monthly equivalent
-haircut = f(trust_class, P_stress, history_length)
+lean_surplus = worst_4_week_net_inflow / 4
+haircut = f(trust_class, p_stress, history_length)
 max_emi = max(0, lean_surplus * haircut)
 max_principal = pv(max_emi, rate, tenure)
 ```
 
-If `requested > max_principal` → counter-offer `max_principal`, do not character-reject.
+Define worst-4-week net from inflow−outflow. Weekly cadence uses weekly periods, not a monthly formula unchanged. Zero rate handled separately. Negative surplus cannot yield positive EMI.
 
-### 6.4 Layer D — Risk band (Model B)
+**D — Stress:** `p_stress` = P(next synthetic lean period cannot cover **reference EMI**). Proxy, not real default.
 
-`P(stress_next_lean)` from features in §9. Maps to rate band and haircut, not to a vanity 300–900 score.
-
-### 6.5 Layer E — Terms mapping (rules, versioned)
-
-Example v1 (tune with eval, document in README):
+**E — Terms (versioned v1, tune on holdout):**
 
 | P(stress) | Trust | Cadence | Rate band | Tenure cap |
 |---|---|---|---|---|
@@ -320,356 +204,438 @@ Example v1 (tune with eval, document in README):
 | High | Any | Weekly | High or decline | 6 mo or decline |
 | Any | Low | — | — | UNVERIFIED / test limit |
 
-### 6.6 One-sentence policy for judges
-
-> We don’t approve people. We price **verified lean-month surplus**, and we **don’t let PDFs print a limit**.
+**Judge line:** We don’t approve people. We price **verified lean-month surplus**, and we **don’t let PDFs print a limit**.
 
 ---
 
-## 7. Credibility and authenticity (detailed)
+## 7. Credibility
 
-### 7.1 Problem judges will ask
+We do not trust honour-system PDFs. Limit = consented, reconcilable rails.
 
-“How do you know the statements are real?”
-
-**Answer:** We don’t. We **refuse to underwrite on honour**. Limit is a function of **consented, reconcilable rails**. Uploads are evidence of *intent to apply*, not of *income*.
-
-### 7.2 Trust ranking (harder to fake → more weight)
-
-1. Simulated **Account Aggregator** (bank-consented JSON, timestamps, account-level).
-2. **UPI / QR** credits to **this shop VPA / merchant ID**.
-3. **GSTIN + e-invoice / GSTR** vs bank/UPI.
-4. Udyam, utility, rent (supporting).
-5. User PDFs / WhatsApp photos / typed totals (**unverified**).
-
-### 7.3 Checks to implement
-
-| Check | Signal | Action |
+| Rank | Rail | Note |
 |---|---|---|
-| Rail identity | VPA/GSTIN ≠ shop | Decline |
-| Concentration | Top payer > 80% credits | Down-term / decline |
-| Roundness | Excess of round ₹ credits | Flag authenticity |
-| Freshness | Long empty then perfect 90d | Flag replay |
-| GST–bank gap | \|GST − UPI\| / GST > 0.35 | Haircut or unverified |
-| Cash claim | Large cash share of sales | Penalty, not a feature |
-| PDF-only | No AA/UPI/GST | No full limit |
+| 1 | Simulated AA | Timestamps, account-level |
+| 2 | UPI to **this** shop VPA | |
+| 3 | GST vs UPI/bank | |
+| 4 | Udyam / utility | Supporting |
+| 5 | PDF / typed totals | Unverified |
 
-### 7.4 UX copy (mandatory)
+| Check | Action |
+|---|---|
+| VPA/GSTIN ≠ shop | Decline |
+| Top payer > 80% | Down-term / decline |
+| Round-amount spike | Auth flag |
+| Empty then perfect 90d | Replay flag |
+| \|GST−UPI\|/GST > 0.35 | Haircut or unverified |
+| Large cash claim | Penalty / verify, **not** a Model A feature that auto-flags cash kiranas |
+| PDF-only | No full limit |
 
-- `Verified (simulated Account Aggregator)`
-- `Unverified upload — does not set credit limit`
-- `Synthetic demo data`
-
-Never hide provenance.
-
-### 7.5 What we will not claim
-
-- That we “detect all fake PDFs” with CV magic in 36 hours.
-- That we have RBI AA production access.
-- That a neural net “knows honesty.”
+Copy: `Verified (simulated Account Aggregator)` · `Unverified upload — does not set credit limit` · `Synthetic demo data`.
 
 ---
 
-## 8. Technical architecture (MERN + ML)
-
-### 8.1 High-level
+## 8. Technical architecture
 
 ```
-[Owner Web : React]
-[Lender Web : React]
-        |  HTTPS JSON  JWT roles: owner | lender
-        v
-[API : Node.js + Express]
-        |                    |
-        |                    +--> [MongoDB]
-        |                         shops, rails, cashflows,
-        |                         applications, decisions, audit
+[Owner / Lender React SPA]
         |
-        +--> HTTP POST /internal/score
-                    v
-           [ML service : FastAPI / Python]
-           Model A authenticity
-           Model B stress
-           Feature builder
-           Terms mapper (can live in API if versioned)
+        v
+[Express BFF + Mongo]
+        |
+        +--> POST /internal/score  -->  [FastAPI]
+        |                                 features.py
+        |                                 auth.joblib / stress.joblib
+        |                                 policy.py (capacity + terms)
+        |
+        +--> POST /internal/agent  -->  [LangGraph]
+                                          tools only; no free-form credit math
 ```
 
-Local docker-compose optional; for hackathon, two processes (`npm run server`, `uvicorn`) plus Mongo is enough.
+Auth stub: `owner@demo` / `lender@demo`. CORS to Vite origin. Money in **integer paise**.
 
-### 8.2 React (frontend)
+### 8.1 React
 
-**Apps:** one SPA, two layouts by role (faster than two repos).
+Routes: `/apply`, `/status/:id`, `/queue`, `/application/:id`, `/evidence`. Design: `design.md` (paper, ink, lilac). Tokens: `apps/web/src/styles/tokens.css`.
 
-**Owner routes:** `/apply`, `/shop/:id/rails`, `/shop/:id/status`
-
-**Lender routes:** `/queue`, `/application/:id` (trust + chart + terms + sliders + fairness), `/evidence` (baseline vs us)
-
-**Libraries (suggested):** React, Vite, React Router, Recharts, a headless table. No MUI-for-everything requirement.
-
-**Accessibility:** skip link, labelled inputs, contrast on primary actions, don’t encode status by colour alone.
-
-### 8.3 Express (BFF)
-
-**Responsibilities:**
-
-- Auth stub: seed users `owner@demo` / `lender@demo` (clearly demo).
-- CRUD shops, rails, applications.
-- Orchestrate scoring: assemble feature payload, call Python, persist decision.
-- Enforce policy: if `verified_rail_count === 0`, short-circuit to `UNVERIFIED` **before** Model B sets a large limit.
-- Audit middleware: log decision writes.
-
-**Suggested routes:**
+### 8.2 Express
 
 ```
-POST   /api/auth/login
-GET    /api/me
-
-POST   /api/shops
-GET    /api/shops/:id
-POST   /api/shops/:id/rails          # type: aa|upi|gst|pdf
-GET    /api/shops/:id/cashflows
-
-POST   /api/applications
-GET    /api/applications             # lender queue
-GET    /api/applications/:id
-POST   /api/applications/:id/score
-POST   /api/applications/:id/override
-POST   /api/applications/:id/stress  # slider recalc, no new ML train
-GET    /api/evidence/summary
+POST /api/auth/login
+GET  /api/me
+POST /api/shops
+GET  /api/shops/:id
+POST /api/shops/:id/rails
+GET  /api/shops/:id/cashflows
+POST /api/applications
+GET  /api/applications
+GET  /api/applications/:id
+POST /api/applications/:id/score
+POST /api/applications/:id/override
+POST /api/applications/:id/stress
+GET  /api/evidence/summary
 ```
 
-**Validation:** reject owner-submitted `cibilScore`. Field does not exist.
+If `verified_rail_count === 0`, short-circuit to `UNVERIFIED` **before** Model B can set a large limit. Reject any `cibilScore` field.
 
-### 8.4 MongoDB collections
+Mongo: `users`, `shops`, `rails`, `cashflows`, `applications`, `decisions`, `overrides`, `audit_logs`. `ownerFlags` only for fairness fixtures — **never** in model features.
+
+---
+
+# PART A — MACHINE LEARNING
+
+## 9. ML overview
+
+| Component | Task | Target | Output | Role |
+|---|---|---|---|---|
+| Model A | Binary classification | `y_auth` | `p_auth`, band, flags | Authentic ops vs mule/pdf_fraud/mismatch |
+| Model B | Binary classification | `y_stress` | `p_stress`, band | Next synthetic lean period fails reference EMI |
+| Feature builder | Deterministic | — | Vector + schema version | Same code train and serve |
+| Eval | Offline | Synthetic labels | `ml/reports/` | Holdout behaviour |
+
+Train A and B independently.
+
+- **Sequential (MVP):** B does **not** consume `p_auth`; authenticity is a gate/haircut.
+- **Stacked (optional):** B uses **out-of-fold** `p_auth` in training; never in-sample A predictions (leakage).
+
+Python owns features. Node must not recompute them. Contract: `ml/schema.json`.
+
+### 9.1 Layout
 
 ```
-users           { role, email }
-shops           { name, category, city, yearsOpen, udyam?, vpa?, gstin?,
-                  ownerFlags: { gender?, area? }, provenance }
-rails           { shopId, type, trustClass, payload, provenance }
-cashflows       { shopId, sourceRailId, t, inflow, outflow, payerId? }
-applications    { shopId, requestedAmount, status }
-decisions       { applicationId, verdict, principal, tenureMonths, rateBps,
-                  cadence, conditions[], drivers[],
-                  pAuth, pStress, maxEmi, policyVersion, modelVersions }
-overrides       { decisionId, userId, reason, newTerms }
-audit_logs      { at, actor, action, entity, payloadHash }
+ml/
+  generate_shops.py
+  features.py
+  schema.json
+  train_auth.py
+  train_stress.py
+  evaluate.py
+  policy.py
+  service.py
+  agent_graph.py
+  agents/
+  tools/
+  models/auth.joblib
+  models/stress.joblib
+  models/meta.json
+  reports/metrics.json
+  reports/model_card_auth.md
+  reports/model_card_stress.md
 ```
 
-All money fields integers (paise) to avoid float bugs.
+### 9.2 Generator
 
-### 8.5 Python ML service
+≥200 shops (500–1000 if time). 90–180 days of daily/tx records; weekly/monthly aggregates from the same source. Every row:
 
-**Stack:** FastAPI, pandas, scikit-learn (HistGradientBoosting or LogisticRegression), joblib. Optional shap or simple permutation for drivers.
+```json
+{ "provenance": "synthetic", "generator_version": "v1" }
+```
 
-**Endpoints:**
+| Archetype | Character | Expected treatment |
+|---|---|---|
+| `stable` | Diverse payers, aligned rails | Possible `STANDARD` |
+| `seasonal` | Real peaks/troughs | Variability; maybe `THIN_FILE` |
+| `declining` | Downward surplus | Higher `p_stress` / smaller capacity |
+| `mule` | Concentration, spikes | Auth review / decline |
+| `pdf_only` | Uploads only | `UNVERIFIED`, no full limit |
+| `gst_mismatch` | GST vs UPI gap | Flag, haircut, more data |
+| `twin_fairness` | Same ops, different protected flags | **Identical terms** |
+
+Also generate **legitimate hard cases** (not fraud by construction): new genuine short history; cash-heavy kirana; festival seasonal; one large legitimate customer; temporary spike.
+
+**Entities:** shop (no protected attrs as model inputs); rail `aa|upi|gst|udyam|pdf` with `trust_class` `verified_simulated|supporting|unverified`; cashflow tx with synthetic `payer_id`; shop-level training row with `y_auth`, `y_stress`, `generator_archetype`.
+
+### 9.3 Model A features
+
+| Feature | Definition |
+|---|---|
+| `payer_hhi` | Sum of squared payer shares |
+| `max_payer_share` | Largest payer / total credits |
+| `round_amount_ratio` | Share matching documented round-amount rule |
+| `gst_upi_rel_gap` | Relative GST vs UPI/bank; define missing behaviour |
+| `history_weeks` | Weeks with history (short = uncertainty, not fraud) |
+| `empty_then_spike` | Inactivity then unusual spike |
+| `rail_count_verified` | Verified/sim-verified rails; **PDF does not count** |
+
+Deterministic extras (policy, not necessarily model): identity mismatch, freshness, replay, cash share as **penalty/verify**, not auto-suspicious.
+
+### 9.4 Model B features
+
+`median_monthly_inflow`, `p10_weekly_inflow`, `cv_weekly_inflow` (define mean=0), `slope_90d`, `lean_month_ratio` (one definition: worst 4-week vs typical 4-week), `outflow_ratio`, `residual_after_opex`, `unique_payers`, `invoice_count`, `weeks_on_vpa`, optional `p_auth` (stacked only).
+
+**Do not** use requested amount as a stress predictor. Affordability is capacity.
+
+Feature quality: units and windows; same missing handling train/serve; reject impossible dates; schema version; unit tests; do not treat missing verified rails as zero activity; keep raw facts vs derived; **no gender/city-as-risk in vectors**.
+
+### 9.5 Model A
+
+```
+y_auth = 1  authentic_ops
+y_auth = 0  mule / pdf_fraud / mismatch
+```
+
+Synthetic label only. Algorithms: Logistic Regression (baseline) vs HistGradientBoostingClassifier (primary); optional RF. Impute; scale LR only; fixed seeds; package versions recorded.
+
+Output:
+
+```json
+{
+  "model": "authenticity",
+  "model_version": "auth-v1",
+  "p_auth": 0.93,
+  "authenticity_band": "HIGH",
+  "flags": [],
+  "feature_schema_version": "1.0"
+}
+```
+
+Hard identity failures and zero verified rails are **policy**, not hidden in `p_auth`.
+
+Thresholds in `meta.json` (placeholders until holdout tune): `low_below` 0.40, `high_at_or_above` 0.75.
+
+Eval: precision/recall on suspicious class, F1, ROC-AUC, confusion matrix, FP review on seasonal/cash/new, metrics by archetype.
+
+### 9.6 Model B
+
+```
+y_stress = 1  if next synthetic lean period cannot cover reference EMI
+```
+
+Label from **future** generator period, not from CIBIL, not from leaked future features. Proxy stress, not real default.
+
+Same algorithm set; sklearn-only is enough.
+
+Output includes `p_stress`, `risk_band`, `reference_emi`, `target_definition`. Example bands: `low_max` 0.20, `medium_max` 0.45.
+
+Eval: ROC-AUC, P/R/F1, PR-AUC if imbalanced, confusion, Brier/calibration, proxy stress among **funded** shops, by archetype. Do not optimize accuracy alone.
+
+### 9.7 Train / leakage / artifacts
+
+Split by **`shop_id`** (70/15/15). All of a shop in one split.
+
+No future values in historical features; no `y_*` or archetype as inputs; no requested amount as stress feature; OOF `p_auth` if stacked; fit imputers on train only.
+
+Runtime **loads** `auth.joblib`, `stress.joblib`, `meta.json`. Never retrain on `/score` or slider.
+
+`meta.json`: feature schema, generator version, model versions, seed, thresholds, `trained_at`.
+
+### 9.8 Explainability
+
+SHAP optional. Map:
+
+| Feature | Language |
+|---|---|
+| `lean_month_ratio` | Weakest four-week period is below typical |
+| `max_payer_share` | One payer is a high share of credits |
+| `gst_upi_rel_gap` | GST and UPI differ materially |
+| `cv_weekly_inflow` | Weekly inflows vary a lot |
+| `history_weeks` | History is short |
+
+Payload: name, observed value, comparison, direction, source, version. Prefer “contributed to”, not “caused”, unless policy supports it.
+
+---
+
+# PART B — AGENTIC AI
+
+## 10. Agents
+
+Orchestration: **LangGraph**, typed state, explicit edges. Invoked by Express as an internal service. LLM may summarize; **code does arithmetic**.
+
+**May:** read structured data; call approved tools; flag missing data; ask for evidence; summarize models/policy; explain; audit.
+
+**Must not:** invent transactions; treat PDF as verified; change probabilities/thresholds; override hard gates; approve/disburse; use protected attributes for terms; accuse fraud from a flag; claim production AA.
+
+### 10.1 Roster (combine nodes if short on time)
+
+1. **Orchestrator** — `load_application`, `validate_application`, `build_features`, `score_authenticity`, `score_stress`, `run_underwriting_policy`, `write_audit_event`. Sequence only; no free-form amount.
+2. **Financial data analyst** — parse AA/UPI/GST (demo), invoices, `reconcile_financial_rails`, `build_financial_features`. LLM does not total money from prose.
+3. **Authenticity investigator** — Model A + identity, freshness, concentration, GST–UPI gap, `create_verification_request`. No “fraud” from score alone.
+4. **Cash-flow / stress analyst** — weekly CF, lean period, Model B, optional demo forecast, drivers. Always say **synthetic lean-period proxy**, not default.
+5. **Terms presenter** — policy tools, max EMI/principal, counteroffer, schedule. Cannot invent rates or exceed `max_principal`.
+6. **Explainability** — grounded copy for lender and owner (see example below).
+7. **Fairness + audit** — twins in code (not LLM); hash, versions, override actor/reason.
+
+Example explanation:
+
+> The application has no credit bureau file. The assessment uses simulated UPI and GST rails. The proposed amount is limited by the weakest observed four-week cash-flow period. One payer contributes a high share of incoming credits, so the lender should review the concentration flag.
+
+### 10.2 LangGraph
+
+State includes application, shop, rails, cashflows, `requested_amount_paise`, provenance, `verified_rail_count`, features, `p_auth` / flags, `p_stress` / drivers, capacity, terms, verdict, explanation, fairness_result, audit_reference, errors.
+
+```
+START → load/validate → provenance
+  → if verified_rail_count == 0 → UNVERIFIED → explain → audit → END
+  → normalize/reconcile → identity hard checks
+  → if hard fail → decline/review → explain → audit → END
+  → Model A → auth gate → features + Model B
+  → capacity → terms → counteroffer
+  → explain → fairness (eval route OK) → audit → END
+```
+
+Fairness twins may be a **separate eval route**. Audit on every score and override, including early `UNVERIFIED`.
+
+**Failures:** parser fail → data-quality / `UNVERIFIED`, no fabricated totals. Model down → fail closed, retry/manual. Schema mismatch → reject score. LLM explain fail → keep deterministic decision + template copy. Audit fail → do not mark workflow complete.
+
+### 10.3 Tools (typed, no shell, no arbitrary URLs)
+
+`load_application`, `validate_application`, `build_features`, `score_authenticity`, `score_stress`, `reconcile_financial_rails`, `run_underwriting_policy`, `simulate_repayment_schedule`, `run_fairness_twins`, `write_audit_event`.
+
+---
+
+# PART C — SCORING API
+
+## 11. FastAPI
 
 ```
 GET  /health
 POST /score
-     body: { shop, rails[], cashflows[], requestedAmount, stressDelta? }
-     resp: { pAuth, pStress, features, drivers[3],
-             verdict, principal, tenureMonths, rateBps, cadence,
-             conditions, maxEmi, maxPrincipal, policyVersion }
-POST /explain   # optional, same as drivers
+POST /explain
+POST /stress-test    # scenario only; no retrain
 ```
 
-**Training** is offline (`notebooks/train.ipynb` or `ml/train.py`). Runtime only loads `models/auth.joblib`, `models/stress.joblib`, `models/meta.json`.
+`/score` body: `application_id`, shop, rails (`type`, `trust_class`, `provenance`), cashflows, `requested_amount_paise`, `policy_version`.
 
-### 8.6 Feature builder (shared contract)
+Response: provenance, `verified_rail_count`, `p_auth`, `p_stress`, features, drivers, verdict, `principal_paise`, `max_emi_paise`, tenure, `rate_bps`, cadence, conditions, policy + model + feature schema versions. **Compute** from fixtures/policy; do not hard-code demo JSON.
 
-Python owns feature code. Node must **not** recompute a second set of features. Document the JSON schema in `ml/schema.json`.
-
-### 8.7 Security (prototype-grade)
-
-- No real PII.
-- Role checks on lender routes.
-- Don’t store uploaded PDF bytes if we can store `unverified: true` + filename; if we store files, local disk only, no public bucket.
-- CORS locked to the Vite origin.
+`/stress-test`: `lean_inflow_delta_pct` / outflow delta. Return scenario assumptions, recomputed surplus/EMI/principal/terms, `scenario_only: true`. Re-scoring Model B is a **separate labelled** call if ever used; MVP slider stays deterministic.
 
 ---
 
-## 9. ML specification
+# PART D — EVALUATION, FAIRNESS, SAFETY
 
-### 9.1 Hypothesis (one or two sentences — useful even though Track 01 is not the research track)
+## 12. Evaluation
 
-Operational cashflow **plus rail authenticity** can separate fundable thin-file MSMEs from unfundable ones **better than a no-CIBIL reject rule**, without using bureau data, at a **measured** proxy-default cost on synthetic labels.
+**Models:** holdout size/balance; P/R/F1/ROC-AUC; confusion; PR-AUC; Brier for B; by archetype; FP/FN examples.
 
-### 9.2 Model A — Authenticity
+**Product:** (1) Baseline funds 0. (2) ZeroCIBIL funded count + proxy stress among offers on holdout. Optional baseline-2: median inflow threshold ignoring authenticity — mule passes that, fails our auth gate. Label **synthetic**.
 
-**Target:** `y_auth = 1` if seed shop marked `authentic_ops`, else `0` (mule / pdf_fraud / mismatch).
+**Fairness:** twins identical except protected flag; compare verdict, principal, rate, tenure, cadence. Accept: ₹0 principal, 0 rate-band, no other term change. **Code**, not LLM.
 
-**Inputs (examples):** payer HHI, max_payer_share, round_amount_ratio, gst_upi_rel_gap, history_weeks, empty_then_spike, cash_share, rail_count_verified.
+**Failures to name on the pitch:** new genuine shops; cash-heavy; seasonal; one dominant customer; delayed GST. Prefer “collect data” over forced decline when the issue is uncertainty.
 
-**Output:** `p_auth`. Thresholds in `meta.json`.
-
-### 9.3 Model B — Stress / thin-file risk
-
-**Target:** `y_stress = 1` if next synthetic lean period cannot cover a **reference EMI** (label from generator, not from CIBIL).
-
-**Inputs (examples):**
-
-- median_monthly_inflow, p10_weekly_inflow
-- cv_weekly_inflow, slope_90d
-- lean_month_ratio (worst4 / median4)
-- outflow_ratio, residual_after_opex
-- unique_payers, invoice_count
-- weeks_on_vpa
-- p_auth (optional stacked; or keep sequential)
-
-**Leakage:** do not include requested amount as a “risk” feature in a way that auto-rejects large asks; capacity handles that.
-
-### 9.4 Baseline
-
-`baseline_verdict = DECLINE if no_cibil else ...`  
-In this product **everyone** has no CIBIL, so baseline funds **0**. Evidence chart: we fund N shops; proxy default D% on holdout.
-
-Second baseline (optional): “approve if median inflow > X” ignoring authenticity — show mule shop gets through baseline-2 but not us.
-
-### 9.5 Metrics
-
-- Funding rate vs baseline.
-- Proxy default among funded.
-- Precision/recall of Model A on fraud shops.
-- Fairness: terms delta on twin shops (gender/area) < ε (e.g. ₹0 principal delta).
-- Calibration sketch: reliability of p_stress (even if rough).
-
-### 9.6 Explainability
-
-Tree importances or SHAP on Model B; map top features to human strings:
-
-- `lean_month_ratio` → “Worst month is 42% of a typical month”
-- `max_payer_share` → “One payer is 81% of credits”
-- `gst_upi_rel_gap` → “GST and UPI disagree by 40%”
-
-### 9.7 Failure analysis (pitch slide)
-
-Where we fail: brand-new genuine shops (short history), heavy cash kiranas, seasonal festival spikes mistaken for mules. State this; do not hide it.
-
-### 9.8 Synthetic generator
-
-`ml/generate_shops.py` creates 200+ shops:
-
-- Templates: stable, seasonal, declining, mule, pdf_only, gst_mismatch, twin_fairness.
-- All rows `provenance: synthetic`.
-- Train/holdout split by `shop_id`.
+**Responsible AI:** synthetic demo; consent if real data later; minimize PII; protected attrs only in fairness fixtures; do not use city as unexplained risk; human review for adverse/ambiguous; correction path; no RBI / zero-fraud / live-default claims.
 
 ---
 
-## 10. UX structure
+## 13. UX (hero screens)
 
-### 10.1 Owner — Apply
-
-1. Shop profile  
-2. Connect rails (simulated buttons: “Link AA (demo)”, “Import UPI CSV (demo)”, “GST summary (demo)”, “Upload PDF (unverified)”)  
-3. Requested amount  
-4. Submit  
-
-### 10.2 Lender — Application detail (hero screen)
-
-Layout:
-
-- Header: shop, category, **No bureau file**, provenance chips  
-- Left: trust panel + fraud flags  
-- Centre: 90-day cashflow + lean highlight  
-- Right: verdict, principal, tenure, rate, cadence, conditions  
-- Bottom: drivers, stress slider, fairness toggle, override  
-
-### 10.3 Evidence page
-
-Two bars: Baseline funded 0 / Ours funded K. Table of holdout shops. Caption: synthetic labels.
+**Owner apply:** profile → simulated rails (AA, UPI, GST, PDF unverified) → amount → submit.  
+**Lender desk:** header (shop, no bureau, provenance) | trust | 90-day bars | terms + slider + fairness + override.  
+**Evidence:** baseline 0 vs ZeroCIBIL K, synthetic caption.
 
 ---
 
-## 11. Demo script (rounds 1–2, ~3 minutes)
+## 14. Demo script (~3 minutes)
 
-1. **Hook:** “This kirana has never had a loan. CIBIL is empty. A bank rejects them.”  
-2. **Owner:** show synthetic UPI + GST (badges). Apply ₹2L.  
-3. **Lender:** baseline stamp REJECT. Our desk: trust high, lean surplus, **₹1.2L / 10 mo / 16% / weekly**.  
-4. **Slider:** worsen lean weeks → limit falls.  
-5. **PDF-only shop:** no full limit.  
-6. **Mule shop:** high revenue, decline/down-term.  
-7. **Fairness:** twin shops, same terms.  
-8. **Evidence:** baseline vs us. “All data synthetic.”
+1. Kirana, empty CIBIL, bank would reject.  
+2. Owner: synthetic UPI + GST. Ask ₹2L.  
+3. Lender: baseline DECLINE. ZeroCIBIL: trust high, lean surplus, **amount / tenure / rate / weekly**.  
+4. Slider worsens lean weeks → limit falls (no retrain).  
+5. PDF-only: no full limit.  
+6. Mule: high inflow, decline.  
+7. Twins: same terms.  
+8. Evidence page. “All data synthetic.”
 
-If the lender screen is not clickable, the round is lost.
-
----
-
-## 12. Pitch claims we will and will not make
-
-**Will:**
-
-- Fairer **process** for thin-file MSMEs: operations + rails + terms.
-- Measured lift vs reject-if-no-CIBIL on **synthetic** data.
-- Authenticity is a **gate**, not a vibe.
-
-**Will not:**
-
-- “RBI approved.”
-- “We replaced CIBIL.”
-- “0% fraud.”
-- Real default prediction on live Indian MSMEs.
+If the lender screen is not clickable, round 1 is lost.
 
 ---
 
-## 13. Implementation plan (4 people, 36 hours)
+## 15. Pitch claims
 
-| Person | Owns | Done when |
-|---|---|---|
-| MERN-1 | Lender detail + charts + sliders | Demo path works on seed shop |
-| MERN-2 | Owner apply + queue + auth stub + Mongo | Two roles can complete apply→score |
-| ML | Generator, features, A/B models, `/score`, eval table | Holdout metrics in `ml/metrics.json` |
-| Glue | Seed 6 demo shops, policy copy, provenance badges, pitch | Script timed < 3:30 |
+**Will:** fairer thin-file process; measured **synthetic** lift vs reject-if-no-CIBIL; authenticity as a gate; agents explain, they do not decide.
 
-**Order:** generator → `/score` on fixtures → lender UI → owner UI → fairness + evidence → polish.
-
-**Cut if late:** owner pretty UI, SHAP, step-up, Docker. **Never cut:** trust panel, terms, synthetic labels, baseline.
+**Will not:** RBI approved; we replaced CIBIL; 0% fraud; real default on live MSMEs; production AA.
 
 ---
 
-## 14. Acceptance criteria
+## 16. Delivery
 
-- [ ] No CIBIL field anywhere that influences the verdict.  
-- [ ] PDF-only application cannot receive STANDARD full limit.  
-- [ ] Verified synthetic kirana receives numeric **amount + tenure + rate**.  
-- [ ] Stress slider changes terms without retrain.  
-- [ ] Fairness twins differ by ≤ ε on principal and rate.  
-- [ ] Baseline comparison visible.  
-- [ ] Every cashflow UI marked synthetic.  
-- [ ] Audit log row per score and override.  
-- [ ] Hypothesis/policy sentence on a slide.  
-- [ ] Failure cases named (new shop, cash-heavy, seasonality).
+### P0 (never cut)
+
+Dual models; verified-rail gate; capacity + terms; stress slider; top drivers; provenance badges; baseline vs us; fairness twins; audit per score/override.
+
+### P1
+
+Auth investigation agent; underwriting report; counteroffer copy.
+
+### Optional later
+
+Financial digital twin; credit-readiness assistant (no promised approval); ongoing stress monitor; alternative credit passport; portfolio intel; multilingual copilot grounded in structured assessment.
+
+### Sequence
+
+1. **Data/ML:** generator → labels → features/tests → train A/B → holdout → artifacts. Exit: stable versioned predictions on fixtures.  
+2. **Underwriting API:** gates, surplus, policy, `/health|/score|/stress-test`. Exit: clean kirana gets numbers; PDF-only cannot get STANDARD; slider no retrain.  
+3. **Agents:** LangGraph + tools + explain + audit. Exit: clean and unverified paths both traceable.  
+4. **Wow/evidence:** twins, baseline, report, slider viz.
+
+### Team (36h)
+
+| Person | Owns |
+|---|---|
+| MERN-1 | Lender desk + slider (demo path) |
+| MERN-2 | Owner, queue, Express, Mongo |
+| ML | Generator, features, A/B, policy, FastAPI |
+| Glue | LangGraph wiring, seed shops, badges, pitch |
+
+**Cut if late:** owner polish, SHAP, step-up, Docker, extra agents. **Never cut:** P0 list.
+
+Open (hour 1): max ticket (₹50k–₹3L); weekly vs monthly default; GST always on clean shop (yes); haircut table in `policyVersion: v1`. Product name is **ZeroCIBIL**.
 
 ---
 
-## 15. Open questions (resolve in hour 1)
+## 17. Acceptance checklist
 
-- Product name.  
-- Max ticket for demo (suggest ₹50k–₹3L).  
-- Weekly vs monthly debit as default.  
-- Whether GST is always present in the clean shop (recommend yes).  
-- Exact haircut table (put in `policyVersion: v1`).
+### ML
+
+- [ ] A and B use documented features and synthetic targets as specified.  
+- [ ] Split by `shop_id`; no leakage; no protected attrs in features.  
+- [ ] Metrics + confusion saved; versions returned at inference.  
+- [ ] Failure analysis includes new, cash-heavy, seasonal.
+
+### Underwriting
+
+- [ ] Zero verified rails → no full limit.  
+- [ ] PDF-only cannot be `STANDARD`.  
+- [ ] Capacity deterministic; over-ask → counteroffer.  
+- [ ] Slider without retrain.  
+- [ ] No CIBIL field influences the verdict.
+
+### Agents
+
+- [ ] Typed tools only; cannot change model/policy.  
+- [ ] Explanations grounded; no unsupported fraud accusation.  
+- [ ] Fail closed if models down; audit on every score/override.
+
+### Demo / fairness
+
+- [ ] Twins identical terms.  
+- [ ] Synthetic labels everywhere.  
+- [ ] Baseline visible.  
+- [ ] No RBI / live-MSME validation claim.
 
 ---
 
-## 16. Repo layout (target)
+## 18. Repo layout
 
 ```
-spec.md                 ← this file
-apps/web/               React SPA
-apps/api/               Express
-ml/                     FastAPI, train, generate, models/
-data/seed/              demo shops JSON
-README.md               how to run + synthetic disclaimer
+spec.md
+design.md
+PRODUCT.md
+apps/web/          React (ZeroCIBIL)
+apps/api/          Express
+ml/                as in §9.1
+data/seed/
+README.md
 ```
 
 ---
 
-## 17. Sources cited by the PS (for the slide, not to scrape)
+## 19. Sources (slides, not scrape)
 
-- SIDBI and Crisil MSME Pulse, 2025  
-- Press Information Bureau, December 2025 (Udyam count)  
-- Track booklet: Finance F2, participant edition  
+SIDBI / Crisil MSME Pulse 2025; PIB December 2025 (Udyam); The Big Hack 2.0 Finance F2 booklet.
 
-We do not need those datasets in the repo. We need the **story** and our **synthetic generator**.
+---
+
+> **We don’t approve people. We price verified lean-month surplus, and we don’t let PDFs print a limit.**  
+> ML estimates authenticity and stress. The engine computes capacity and terms. Agents coordinate evidence. The lender decides.
