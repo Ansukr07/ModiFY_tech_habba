@@ -473,3 +473,22 @@
 .example-list .panel .btn {
   margin-top: 12px;
 }
+
+.queue-twins {
+  margin-top: 48px;
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+}
+
+.queue-twins h2 {
+  font: 600 28px var(--display);
+  letter-spacing: -0.03em;
+  margin: 0 0 8px;
+}
+
+.twin-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
