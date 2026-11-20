@@ -1,4 +1,4 @@
-.landing-frame { background:#c5c5c5; padding:clamp(12px,1.6vw,48px); }
+.landing-frame { background:#fff; }
 .landing-sheet { background:#fff; min-height:100vh; overflow:hidden; color:#111; }
 .landing-nav { height:112px; max-width:2780px; padding:0 clamp(24px,2.5vw,72px); margin:auto; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:30px; }
 .landing-brand { display:inline-flex; align-items:center; gap:12px; width:max-content; color:#111; text-decoration:none; font-size:18px; font-weight:600; }
