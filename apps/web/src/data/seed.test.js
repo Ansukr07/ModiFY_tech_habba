@@ -20,3 +20,12 @@ test("synthetic offers fit their stated weekly repayment capacity", () => {
 test("display keeps paise instead of rounding offers upward", () => {
   assert.equal(paiseToInr(10001), "₹100.01");
 });
+
+test("fairness seed twins differ only in protected flags and presentation", () => {
+  const [a, b] = SHOPS.filter((shop) => shop.id.startsWith("twin"));
+  assert.ok(a && b);
+  for (const key of ["requestedAmount", "rails", "weeks", "leanMonthRatio", "pAuth", "pStress", "verdict", "principal", "tenureMonths", "rateBps", "cadence", "maxEmi", "weeklyRepayment", "conditions"]) {
+    assert.deepEqual(a[key], b[key], key);
+  }
+  assert.notDeepEqual(a.ownerFlags, b.ownerFlags);
+});
