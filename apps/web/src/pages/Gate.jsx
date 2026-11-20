@@ -42,7 +42,7 @@ export function Gate() {
           <div>
             <span className="sticker blue">Verified rails</span>
             <div className="widget" style={{ marginTop: 12 }}>
-              <div className="stat-num">90 days</div>
+              <div className="stat-num">12 weeks</div>
               <p className="muted">of shop activity in this synthetic example</p>
               <div className="bars" aria-hidden="true">
                 {[40, 70, 55, 90, 60, 75, 48].map((h, i) => (

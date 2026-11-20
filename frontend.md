@@ -4,6 +4,7 @@
 **Authority:** [spec.md](spec.md) defines product and underwriting; [design.md](design.md) defines visual design. API contracts are in [backend.md](backend.md). If these plans conflict with either source, the source wins.
 
 **Current frontend state:** The React app is a navigable synthetic fixture demo. `/apply` offers fixed sample shops; it does not save owner data or submit applications. The API-backed application flow, scoring, and scenario calculations below remain implementation requirements once the backend exists.
+The current seed chart contains 12 weekly samples (84 days); the future 90-day board requires daily source records from the backend.
 
 ## 1. Purpose and boundaries
 

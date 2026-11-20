@@ -44,7 +44,7 @@ export function LenderDesk() {
           </section>
 
           <section className="panel">
-            <h2>Ninety-day operations</h2>
+            <h2>Twelve-week operations</h2>
             <p className="muted">
               Sample lean-month ratio {Math.round(shop.leanMonthRatio * 100)}%. Black bar marks the lowest week.
             </p>
