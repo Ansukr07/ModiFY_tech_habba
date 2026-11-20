@@ -1,0 +1,11 @@
+{
+  "feature_schema_version": "1.0",
+  "units": {
+    "money": "paise",
+    "history_weeks": "weeks with at least one inflow or outflow",
+    "lean_month_ratio": "worst contiguous 4-week net / typical 4-week net (median of rolling 4-week nets)"
+  },
+  "round_amount_rule": "inflow paise divisible by 100000 (₹1000) counts as round",
+  "gst_gap": "abs(gst_sales - upi_inflow) / max(gst_sales, 1)",
+  "cv_zero_mean": "if mean weekly inflow is 0, cv_weekly_inflow is null not 0"
+}
