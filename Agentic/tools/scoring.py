@@ -39,6 +39,13 @@ def score(
     """Return a model score and version, or a labelled demo estimate."""
     if model not in {"authenticity", "stress"}:
         raise ScoringError(f"Unknown model: {model}")
+    try:
+        from artifacts import score_model
+
+        value, version = score_model(model, features, variant)
+        return _checked_score(value), version
+    except Exception:
+        pass
     service_url = os.getenv("ZERO_CIBIL_SCORE_URL")
     if service_url:
         try:

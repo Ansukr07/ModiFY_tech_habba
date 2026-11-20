@@ -18,13 +18,13 @@ def normalize_cashflows(
         out.append(
             {
                 "account_id": item.get("account_id"),
-                "ts": str(item.get("ts", item.get("timestamp", ""))),
+                "ts": str(item.get("ts", item.get("timestamp", item.get("t", "")))),
                 "inflow": int(item.get("inflow_paise", item.get("inflow", 0))),
                 "outflow": int(item.get("outflow_paise", item.get("outflow", 0))),
                 "counterparty_id": item.get(
                     "counterparty_id", item.get("payer_id")
                 ),
-                "channel": item.get("channel", rail.get("rail_type", "unknown")),
+                "channel": item.get("channel") or item.get("source_rail") or rail.get("rail_type") or rail.get("type") or "unknown",
                 "source_rail": item.get("source_rail_id"),
                 "provenance": item.get(
                     "provenance", rail.get("provenance", "unknown")
@@ -133,8 +133,7 @@ def build_features(
     }
     if gap is not None:
         feats["gst_upi_rel_gap"] = gap
-    missing = [name for name in ("gst_upi_rel_gap",) if name not in feats]
-    return feats, missing
+    return feats, []
 
 
 def reconcile(

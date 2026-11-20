@@ -40,8 +40,8 @@ def validate(state: dict[str, Any]) -> dict[str, Any]:
     verified_count = sum(
         1
         for rail in rails
-        if rail.get("trust_class") in {"verified", "verified_simulated"}
-        and rail.get("rail_type") != "pdf"
+        if (rail.get("trust_class") or rail.get("trustClass")) in {"verified", "verified_simulated"}
+        and (rail.get("rail_type") or rail.get("type")) != "pdf"
     )
     provenance_counts: dict[str, int] = {}
     for rail in rails:

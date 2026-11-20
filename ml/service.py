@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -12,9 +13,20 @@ from pydantic import BaseModel, Field
 ROOT = Path(__file__).parent
 sys.path.insert(0, str(ROOT))
 
+from artifacts import ScoringError, score_model
+
+def _json_safe(value):
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if isinstance(value, dict):
+        return {k: _json_safe(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(v) for v in value]
+    return value
 from explain import drivers_from_features, template_explain
 from features import build_features, verified_rail_count
-from policy import underwrite
+from model_features import auth_features, stress_features
+from policy import load_meta, underwrite
 
 app = FastAPI(title="ZeroCIBIL score", version="0.1.0")
 
@@ -24,6 +36,7 @@ class ScoreIn(BaseModel):
     shop: dict
     rails: list[dict] = Field(default_factory=list)
     cashflows: list[dict] = Field(default_factory=list)
+    documents: list[dict] = Field(default_factory=list)
     requested_amount_paise: int
     policy_version: str = "v1"
 
@@ -61,7 +74,26 @@ def _identity(shop: dict, rails: list[dict]):
     return ok, mismatch
 
 
-def run_score(body: dict) -> dict:
+def _model_scores(cashflows: list[dict]) -> dict:
+    auth = auth_features(cashflows)
+    stress = stress_features(cashflows, "B-full")
+    scores = {"auth_input": auth, "stress_input": stress}
+    try:
+        p_auth, auth_version = score_model("authenticity", auth["vector"])
+        scores["p_auth"] = p_auth
+        scores["auth_version"] = auth_version
+    except Exception:
+        scores["p_auth"] = None
+    try:
+        p_stress, stress_version = score_model("stress", stress["vector"], "B-full")
+        scores["p_stress"] = p_stress
+        scores["stress_version"] = stress_version
+    except Exception:
+        scores["p_stress"] = None
+    return scores
+
+
+def run_score(body: dict, scores: dict | None = None) -> dict:
     _forbid_protected({"shop": {k: v for k, v in body["shop"].items() if k != "ownerFlags"}, "rails": body["rails"]})
     shop = {k: v for k, v in body["shop"].items() if k != "ownerFlags"}
     rails = body["rails"]
@@ -71,7 +103,19 @@ def run_score(body: dict) -> dict:
         raise HTTPException(400, "VALIDATION")
     feats = build_features(shop, rails, cfs)
     ident_ok, mismatch = _identity(shop, rails)
+    scores = scores or _model_scores(cfs)
+    # Trained scores are uncalibrated on Indian MSME/UPI data. Policy arithmetic
+    # stays on the versioned heuristic until a domain-reviewed threshold is set.
     result = underwrite(feats, rails, requested, ident_ok, mismatch)
+    if scores.get("auth_version"):
+        result.setdefault("versions", {})["model_auth"] = scores["auth_version"]
+    if scores.get("stress_version"):
+        result.setdefault("versions", {})["model_stress"] = scores["stress_version"]
+    result["model_scores"] = {
+        "p_auth": scores.get("p_auth"),
+        "p_stress": scores.get("p_stress"),
+        "note": "Uncalibrated trained scores. Policy verdicts still use the versioned heuristic until a domain-reviewed threshold is set.",
+    }
     drv = drivers_from_features(feats)
     expl = template_explain(result, rails)
     raw = json.dumps(body, sort_keys=True, default=str)
@@ -88,6 +132,13 @@ def run_score(body: dict) -> dict:
         "input_hash": h,
         "scenario_only": False,
         **result,
+        "model_input": _json_safe({
+            "auth": scores.get("auth_input", {}).get("vector"),
+            "stress": scores.get("stress_input", {}).get("vector"),
+            "auth_excluded_rows": len(scores.get("auth_input", {}).get("excluded_rows") or []),
+            "stress_insufficient_history": scores.get("stress_input", {}).get("insufficient_history"),
+        }),
+        "model_scores": _json_safe(result.get("model_scores")),
     }
     if out["verdict"] in ("UNVERIFIED", "DECLINE"):
         out["principal_paise"] = 0
@@ -105,19 +156,30 @@ def run_score(body: dict) -> dict:
 
 @app.get("/health")
 def health():
+    meta = load_meta()
     return {
         "status": "ok",
-        "models": "heuristic-v0",
+        "models": {
+            "auth": meta.get("auth_model_version"),
+            "stress": meta.get("stress_model_version"),
+        },
         "policy": "v1",
-        "feature_schema": "1.0",
+        "feature_schema": meta.get("feature_schema_version", "1.0"),
         "ready": True,
     }
 
 
 @app.post("/score")
 @app.post("/internal/score")
-def score(body: ScoreIn):
-    return run_score(body.model_dump())
+def score(body: dict):
+    if body.get("model") and isinstance(body.get("features"), dict):
+        try:
+            value, version = score_model(body["model"], body["features"], body.get("variant"))
+        except ScoringError as exc:
+            raise HTTPException(503, str(exc)) from exc
+        key = "p_auth" if body["model"] == "authenticity" else "p_stress"
+        return {key: value, "probability": value, "model_version": version}
+    return run_score(ScoreIn.model_validate(body).model_dump())
 
 
 @app.post("/explain")
@@ -147,12 +209,82 @@ def stress(body: StressIn):
     return scored
 
 
+def _run_agent(payload: dict) -> dict:
+    repo = ROOT.parent
+    agentic = repo / "Agentic"
+    if str(agentic) not in sys.path:
+        sys.path.insert(0, str(agentic))
+        sys.path.insert(0, str(repo))
+    from graph import build_graph
+
+    rails = []
+    for rail in payload.get("rails") or []:
+        rails.append({
+            **rail,
+            "rail_type": rail.get("rail_type") or rail.get("type"),
+            "trust_class": rail.get("trust_class") or rail.get("trustClass"),
+        })
+    graph = build_graph()
+    documents = payload.get("documents") or []
+    state = graph.invoke({
+        "application_id": payload["application_id"],
+        "schema_version": "1.0",
+        "shop": payload["shop"],
+        "rails": rails,
+        "cashflows": payload.get("cashflows") or [],
+        "documents": documents,
+        "policy_version": payload.get("policy_version", "v1"),
+    })
+    extracted = state.get("statement_rows") or []
+    score_cashflows = extracted or payload.get("cashflows") or []
+    payload = {**payload, "cashflows": score_cashflows}
+    scores = _model_scores(score_cashflows)
+    if state.get("p_auth") is not None:
+        scores["p_auth"] = state["p_auth"]
+    if state.get("p_stress") is not None:
+        scores["p_stress"] = state["p_stress"]
+    out = run_score(payload, scores=scores)
+    events = state.get("audit_events") or []
+    out["workflow_trace"] = [event.get("node") or event.get("event") for event in events] or ["validate", "document_intake", "normalize", "authenticity", "stress", "policy", "explain"]
+    out["agent_status"] = state.get("status")
+    out["auth_gate"] = state.get("auth_gate")
+    if state.get("verification_requests"):
+        out["verification_requests"] = state["verification_requests"]
+    if state.get("statement_intake"):
+        out["statement_intake"] = state["statement_intake"]
+    agent_detail = {}
+    for key in (
+        "data_quality",
+        "missing_features",
+        "feature_variant",
+        "reconciliation",
+        "supporting_signals",
+        "authenticity_flags",
+        "stress_drivers",
+        "invoice_evidence",
+        "human_review",
+        "provenance_summary",
+        "errors",
+        "explanation",
+        "model_versions",
+        "owner_language",
+    ):
+        if key in state and state[key] not in (None, [], {}):
+            agent_detail[key] = state[key]
+    if agent_detail:
+        out["agent_detail"] = _json_safe(agent_detail)
+    return out
+
+
 @app.post("/internal/agent")
 def agent(body: ScoreIn):
-    """LangGraph alias: same scoring path, template explanation (P0)."""
-    out = run_score(body.model_dump())
-    out["workflow_trace"] = ["validate", "provenance", "features", "policy", "explain", "audit_pending"]
-    return out
+    payload = body.model_dump()
+    try:
+        return _run_agent(payload)
+    except Exception:
+        out = run_score(payload)
+        out["workflow_trace"] = ["validate", "features", "policy", "explain", "agent_unavailable"]
+        return out
 
 
 @app.post("/internal/fairness")

@@ -33,6 +33,8 @@ class PolicyTests(unittest.TestCase):
         self.assertEqual(out["verdict"], "UNVERIFIED")
         self.assertEqual(out["principal_paise"], 0)
         self.assertEqual(verified_rail_count(r), 0)
+        self.assertIsNone(out["p_stress"])
+        self.assertEqual(out["policy_thresholds"]["verified_rail_minimum"], 1)
 
     def test_clean_positive_principal(self):
         r = rails("aa", "upi", "gst")
@@ -40,6 +42,19 @@ class PolicyTests(unittest.TestCase):
         out = underwrite(f, r, 20000000, True, False)
         self.assertIn(out["verdict"], ("STANDARD", "THIN_FILE"))
         self.assertGreater(out["principal_paise"], 0)
+        self.assertEqual(out["capacity"]["retained_capacity_factor"], out["capacity"]["haircut"])
+        self.assertEqual(out["capacity"]["haircut_amount_paise"],
+                         out["capacity"]["lean_surplus_paise"] - out["capacity"]["max_emi_paise"])
+        basis = out["capacity"]["retention_basis"]
+        self.assertEqual(basis["verified_rail_count"], 3)
+        self.assertEqual(basis["stress_band"], out["risk_band"])
+        self.assertEqual(basis["history_weeks"], f["history_weeks"])
+        self.assertEqual(basis["high_trust_gate_met"],
+                         basis["verified_rail_count"] >= 2 and basis["authenticity_band"] == "HIGH")
+        self.assertEqual(out["policy_thresholds"]["gst_upi_gap_review_above"], 0.35)
+        self.assertEqual(out["policy_thresholds"]["thin_history_below_weeks"], 8)
+        self.assertEqual(out["features"]["history_weeks"], f["history_weeks"])
+        self.assertEqual(out["features"]["worst_4_week_net_paise"], f["worst_4_week_net_paise"])
 
     def test_lean_period_dates_match_policy_window(self):
         r = rails("aa", "upi")
@@ -67,6 +82,38 @@ class PolicyTests(unittest.TestCase):
         out = underwrite(f, r, 30000000, True, False)
         self.assertEqual(out["verdict"], "DECLINE")
         self.assertEqual(out["principal_paise"], 0)
+
+    def test_negative_operating_surplus_has_no_positive_capacity(self):
+        r = rails("aa", "upi")
+        rows = [{"t": (date(2026, 1, 5) + timedelta(weeks=i)).isoformat(),
+                 "inflow_paise": 0, "outflow_paise": 100000, "payer_id": "p0"}
+                for i in range(12)]
+        out = underwrite(build_features({"name": "x"}, r, rows), r, 1000000, True, False)
+        self.assertLessEqual(out["capacity"]["lean_surplus_paise"], 0)
+        self.assertEqual(out["capacity"]["max_emi_paise"], 0)
+        self.assertEqual(out["capacity"]["max_principal_paise"], 0)
+
+    def test_positive_surplus_blocked_by_trust_gate_is_not_called_zero_surplus(self):
+        r = rails("upi")
+        rows = [{"t": (date(2026, 1, 5) + timedelta(weeks=i)).isoformat(),
+                 "inflow_paise": 1234567, "outflow_paise": 500000, "payer_id": f"p{i % 4}"}
+                for i in range(12)]
+        f = build_features({"name": "x"}, r, rows)
+        out = underwrite(f, r, 1000000, True, False)
+        self.assertEqual(out["authenticity_band"], "HIGH")
+        self.assertIsNone(out["not_run_reason"])
+        self.assertEqual(out["verdict"], "THIN_FILE")
+        self.assertGreater(out["principal_paise"], 0)
+        self.assertLessEqual(out["principal_paise"], 1000000)
+        self.assertGreater(out["capacity"]["lean_surplus_paise"], 0)
+        self.assertEqual(out["capacity"]["retained_capacity_factor"], 0.18)
+        self.assertGreater(out["capacity"]["max_emi_paise"], 0)
+        self.assertGreater(out["capacity"]["max_principal_paise"], 0)
+        self.assertGreater(out["tenure_months"], 0)
+        self.assertGreater(out["rate_bps"], 0)
+        self.assertFalse(out["capacity"]["retention_basis"]["high_trust_gate_met"])
+        self.assertEqual(out["capacity"]["retention_basis"]["factor_rule"], "conservative_until_high_trust_gate")
+        self.assertEqual(out["capacity"]["retention_basis"]["applied_factor"], 0.18)
 
     def test_identity_mismatch(self):
         r = rails("upi")

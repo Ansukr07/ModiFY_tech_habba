@@ -1,3 +1,4 @@
+import { DemoPlayer } from "./components/DemoPlayer.jsx";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./auth.jsx";
 import { Gate } from "./pages/Gate.jsx";
@@ -20,6 +21,7 @@ function Protected({ role, children }) {
 export default function App() {
   return (
     <BrowserRouter><AuthProvider>
+      <DemoPlayer />
       <Routes>
         <Route path="/" element={<Gate />} />
         <Route path="/login" element={<Login />} />

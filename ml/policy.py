@@ -78,9 +78,14 @@ def stress_band(p: float, meta: dict) -> str:
     return "HIGH"
 
 
+# Smallest share in the high-trust table (short history, high stress).
+# One verified rail with positive surplus still gets this bounded offer.
+CONSERVATIVE_RETENTION = 0.18
+
+
 def haircut(trust_high: bool, band: str, history_weeks: int) -> float:
     if not trust_high:
-        return 0.0
+        return CONSERVATIVE_RETENTION
     if history_weeks < 8:
         h = {"LOW": 0.40, "MID": 0.28, "HIGH": 0.18}[band]
     else:
@@ -110,14 +115,20 @@ def installment(principal: int, periods: int, annual_bps: int, cadence: str) -> 
     return round(principal / periods if r == 0 else principal * r / (1 - (1 + r) ** (-periods)))
 
 
-def underwrite(features: dict, rails: list[dict], requested: int, identity_ok: bool, identity_mismatch: bool):
+def underwrite(features: dict, rails: list[dict], requested: int, identity_ok: bool, identity_mismatch: bool, scores: dict | None = None):
     from features import verified_rail_count
 
     meta = load_meta()
+    st = meta.setdefault("stress_thresholds", {})
+    if "low_max" not in st and "LOW_MAX" in st:
+        st["low_max"] = st["LOW_MAX"]
+        st["medium_max"] = st.get("MEDIUM_MAX", 0.45)
+    meta.setdefault("auth_thresholds", {"low_below": 0.40, "high_at_or_above": 0.75})
     vrc = verified_rail_count(rails)
     not_run = None
     p_auth = p_stress = None
     a_band = s_band = None
+    scores = scores or {}
 
     if identity_mismatch:
         return early("DECLINE", "identity_mismatch", requested, meta, vrc, features)
@@ -128,12 +139,12 @@ def underwrite(features: dict, rails: list[dict], requested: int, identity_ok: b
     if vrc == 0:
         return early("UNVERIFIED", "no_verified_rail", requested, meta, vrc, features)
 
-    p_auth = heuristic_p_auth(features)
+    p_auth = scores["p_auth"] if scores.get("p_auth") is not None else heuristic_p_auth(features)
     a_band = authenticity_band(p_auth, meta)
     if a_band == "LOW":
         return early("DECLINE", "authenticity_low", requested, meta, vrc, features, p_auth, a_band)
 
-    p_stress = heuristic_p_stress(features)
+    p_stress = scores["p_stress"] if scores.get("p_stress") is not None else heuristic_p_stress(features)
     s_band = stress_band(p_stress, meta)
     hist = int(features.get("history_weeks") or 0)
     trust_high = vrc >= 2 and a_band == "HIGH"
@@ -142,7 +153,9 @@ def underwrite(features: dict, rails: list[dict], requested: int, identity_ok: b
     lean_weekly = worst // 4
     max_pay = max(0, int(lean_weekly * h))
     if max_pay <= 0:
-        return early("DECLINE", "zero_surplus", requested, meta, vrc, features, p_auth, a_band, p_stress, s_band)
+        reason = "trust_gate_no_capacity" if lean_weekly > 0 and not trust_high else "zero_surplus"
+        return early("DECLINE", reason, requested, meta, vrc, features, p_auth, a_band, p_stress, s_band,
+                     lean_weekly=lean_weekly)
 
     if s_band == "HIGH" and not trust_high:
         cadence, tenure_mo, rband = "weekly", 6, "HIGH"
@@ -164,7 +177,7 @@ def underwrite(features: dict, rails: list[dict], requested: int, identity_ok: b
             tenure_mo=0,
             cadence="weekly",
             rband="HIGH",
-            haircut=h,
+            haircut=0,
             lean_weekly=lean_weekly,
             worst=worst,
             conditions=[],
@@ -233,7 +246,8 @@ def underwrite(features: dict, rails: list[dict], requested: int, identity_ok: b
     )
 
 
-def early(verdict, reason, requested, meta, vrc, features, p_auth=None, a_band=None, p_stress=None, s_band=None):
+def early(verdict, reason, requested, meta, vrc, features, p_auth=None, a_band=None, p_stress=None, s_band=None,
+          lean_weekly=0):
     return pack(
         verdict=verdict,
         reason=reason,
@@ -251,7 +265,7 @@ def early(verdict, reason, requested, meta, vrc, features, p_auth=None, a_band=N
         cadence="weekly",
         rband=None,
         haircut=0,
-        lean_weekly=0,
+        lean_weekly=lean_weekly,
         worst=int(features.get("worst_4_week_net_paise") or 0),
         conditions=[],
     )
@@ -261,6 +275,25 @@ def pack(**k):
     rate = k.get("rate") or (RATE_BPS.get(k["rband"]) if k.get("rband") else 0)
     periods = k.get("periods") or 0
     repayment = installment(k["principal"], periods, rate, k["cadence"]) if k["principal"] > 0 else 0
+    history_weeks = int(k["features"].get("history_weeks") or 0)
+    trust_high = k["vrc"] >= 2 and k["a_band"] == "HIGH"
+    retention_basis = {
+        "verified_rail_count": k["vrc"],
+        "required_verified_rails": 2,
+        "authenticity_band": k["a_band"],
+        "required_authenticity_band": "HIGH",
+        "stress_band": k["s_band"],
+        "history_weeks": history_weeks,
+        "history_tier": "short" if history_weeks < 8 else "established",
+        "high_trust_gate_met": trust_high,
+        "applied_factor": k["haircut"],
+        "factor_rule": (
+            "stress_and_history_select_share" if trust_high
+            else "conservative_until_high_trust_gate" if k["haircut"] > 0
+            else "zero_until_high_trust_gate" if k["lean_weekly"] > 0
+            else "no_positive_surplus"
+        ),
+    }
     return {
         "verdict": k["verdict"],
         "not_run_reason": k.get("reason"),
@@ -281,6 +314,12 @@ def pack(**k):
         "total_interest_paise": max(0, repayment * periods - k["principal"]) if k["principal"] else 0,
         "conditions": k["conditions"],
         "counteroffer": bool(k.get("counter")),
+        "features": {
+            "history_weeks": history_weeks,
+            "worst_4_week_net_paise": k["worst"],
+            "max_payer_share": k["features"].get("max_payer_share"),
+            "gst_upi_rel_gap": k["features"].get("gst_upi_rel_gap"),
+        },
         "capacity": {
             "worst_4_week_net_paise": k["worst"],
             "worst_4_week_start": k["features"].get("worst_4_week_start"),
@@ -289,6 +328,9 @@ def pack(**k):
             "lean_surplus_paise": k["lean_weekly"],
             "period": "week",
             "haircut": k["haircut"],
+            "retained_capacity_factor": k["haircut"],
+            "retention_basis": retention_basis,
+            "haircut_amount_paise": max(0, k["lean_weekly"] - k["max_pay"]),
             "post_haircut_max_emi_paise": k["max_pay"],
             "max_emi_paise": k["max_pay"],
             "max_principal_paise": k.get("max_principal", 0),
@@ -296,10 +338,20 @@ def pack(**k):
             "ticket_ceiling_paise": TICKET_CEILING_PAISE,
         },
         "reference_emi_paise": REF_EMI_WEEKLY_PAISE,
+        "policy_thresholds": {
+            "auth_low_below": k["meta"].get("auth_thresholds", {}).get("low_below"),
+            "auth_high_at_or_above": k["meta"].get("auth_thresholds", {}).get("high_at_or_above"),
+            "stress_low_max": k["meta"].get("stress_thresholds", {}).get("low_max"),
+            "stress_medium_max": k["meta"].get("stress_thresholds", {}).get("medium_max"),
+            "gst_upi_gap_review_above": 0.35,
+            "payer_share_review_above": 0.5,
+            "thin_history_below_weeks": 8,
+            "verified_rail_minimum": 1,
+        },
         "target_definition": "next_synthetic_lean_period_reference_emi_coverage",
         "versions": {
-            "model_auth": k["meta"].get("auth_model_version", "heuristic-v0"),
-            "model_stress": k["meta"].get("stress_model_version", "heuristic-v0"),
+            "model_auth": k["meta"].get("auth_model_version", k["meta"].get("stress_model_version", "unknown")),
+            "model_stress": k["meta"].get("stress_model_version", "unknown"),
             "policy": POLICY_VERSION,
             "feature_schema": k["meta"].get("feature_schema_version", "1.0"),
             "generator": k["meta"].get("generator_version", "v1"),

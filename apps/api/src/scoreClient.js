@@ -15,7 +15,7 @@ export async function postScore(path, body) {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(8000),
+    signal: AbortSignal.timeout(20000),
   });
   const json = await r.json().catch(() => ({}));
   if (!r.ok) {

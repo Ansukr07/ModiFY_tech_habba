@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Mark } from "../components/Mark.jsx";
+import { BackButton } from "../components/BackButton.jsx";
 import { useAuth } from "../auth.jsx";
 
 export function Login() {
@@ -20,7 +21,7 @@ export function Login() {
   return <main className="login-page">
     <header className="login-nav">
       <Link className="brand" to="/"><Mark size={20} /> ZeroCIBIL</Link>
-      <Link className="login-back" to="/">Back to home <span aria-hidden="true">↗</span></Link>
+      <BackButton to="/">Back to home</BackButton>
     </header>
     <div className="login-layout">
       <section className="login-intro" aria-labelledby="login-title">

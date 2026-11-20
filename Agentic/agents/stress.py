@@ -29,8 +29,8 @@ def analyze_stress(
         band = "HIGH"
 
     has_bank_rail = any(
-        rail.get("rail_type") == "aa"
-        and rail.get("trust_class") in {"verified", "verified_simulated"}
+        (rail.get("rail_type") or rail.get("type")) == "aa"
+        and (rail.get("trust_class") or rail.get("trustClass")) in {"verified", "verified_simulated"}
         for rail in state.get("rails", [])
     )
     calculated_capacity = capacity(

@@ -1,3 +1,4 @@
+import { startDemo } from "../components/DemoPlayer.jsx";
 import { Link } from "react-router-dom";
 import { Mark } from "../components/Mark.jsx";
 import { SHOPS, paiseToInr } from "../data/seed.js";
@@ -33,6 +34,7 @@ export function Gate() {
             <h1 id="landing-title">Empowering your<br />financial future</h1>
             <p className="landing-subtitle">Credit terms shaped by your shop’s verified operations, even without a bureau file.</p>
             <div className="landing-actions">
+              <button type="button" className="landing-button landing-button-light" onClick={startDemo}>Watch full demo <Arrow /></button>
               <Link className="landing-button landing-button-dark" to="/login">Explore as owner <Arrow /></Link>
               <Link className="landing-button landing-button-light" to="/login?role=lender">Open lender desk <Arrow /></Link>
             </div>
@@ -105,6 +107,7 @@ export function Gate() {
             <h2 id="landing-cta-title">See the shop beyond its bureau file.</h2>
             <p>Explore a sample owner journey or review the evidence as a lender.</p>
             <div className="landing-actions">
+              <button type="button" className="landing-button landing-button-light" onClick={startDemo}>Watch full demo <Arrow /></button>
               <Link className="landing-button landing-button-dark" to="/login">Start as an owner <Arrow /></Link>
               <Link className="landing-button landing-button-light" to="/login?role=lender">Review as a lender <Arrow /></Link>
             </div>

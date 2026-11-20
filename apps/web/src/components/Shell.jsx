@@ -1,6 +1,7 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Mark } from "./Mark.jsx";
 import { useAuth } from "../auth.jsx";
+import Button from "./Button.jsx";
 
 export function Shell({ role, children }) {
   const navigate = useNavigate();
@@ -30,14 +31,13 @@ export function Shell({ role, children }) {
         )}
         <div className="nav-end">
           <span className="role-chip">{role === "lender" ? "Lender workspace" : role === "bank_admin" ? "Bank admin workspace" : "Owner workspace"}</span>
-          <button
+          <Button
             type="button"
-            className="btn btn-primary"
+            variant="secondary" size="sm" arrow
             onClick={async () => { await logout(); navigate("/login", { replace: true }); }}
           >
             Sign out
-            <span aria-hidden="true"> →</span>
-          </button>
+          </Button>
         </div>
       </header>
       <main id="main">{children}</main>

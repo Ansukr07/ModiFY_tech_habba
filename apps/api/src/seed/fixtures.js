@@ -33,6 +33,21 @@ export const DEMO_USERS = [
   { _id: "user-bank-admin", email: "bank@demo", role: "bank_admin" },
 ];
 
+export const EVIDENCE_FIXTURES = [
+  { public_ref: "DEMO-AA-001", type: "aa", label: "Matching Account Aggregator file", identity_match: true, trustClass: "verified_simulated" },
+  { public_ref: "DEMO-AA-002", type: "aa", label: "Name-mismatch Account Aggregator file", identity_match: false, trustClass: "verified_simulated" },
+  { public_ref: "DEMO-GST-001", type: "gst", label: "GST summary aligned with typical UPI totals", identity_match: true, trustClass: "verified_simulated", payload: { taxable_sales_paise: 50000000, period_from: "2026-01-05", period_to: "2026-03-23" } },
+  { public_ref: "DEMO-GST-002", type: "gst", label: "GST summary with a sales gap versus UPI", identity_match: true, trustClass: "verified_simulated", payload: { taxable_sales_paise: 90000000, period_from: "2026-01-05", period_to: "2026-03-23" } },
+  { public_ref: "DEMO-ID-001", type: "identity", rail_type: "udyam", label: "Matching Udyam record", identity_match: true, trustClass: "supporting", identity: { udyam: "UDYAM-KR-03-000111" } },
+  { public_ref: "DEMO-ID-002", type: "identity", rail_type: "udyam", label: "Different Udyam holder", identity_match: false, trustClass: "supporting", identity: { udyam: "UDYAM-XX-99-000999" } },
+  { public_ref: "DEMO-REC-001", type: "reconciliation", rail_type: "gst", label: "Updated GST totals for reconciliation", identity_match: true, trustClass: "verified_simulated", payload: { taxable_sales_paise: 50000000, period_from: "2026-01-05", period_to: "2026-03-23" } },
+  { public_ref: "DEMO-PDF-001", type: "other", rail_type: "pdf", label: "Supporting PDF statement", identity_match: true, trustClass: "unverified" },
+];
+
+export function safeEvidenceFixture(fixture) {
+  return { public_ref: fixture.public_ref, type: fixture.type, label: fixture.label, identity_match: fixture.identity_match };
+}
+
 export const BANK_ACCOUNTS = [
   { _id: "bank-clean", public_ref: "DEMO-ACCT-001", masked_number: "•••• 1042", customer_name: "Lakshmi Stores", city: "Bengaluru", status: "active", scenario_hint: "Matching account", weeks: [42, 48, 39, 51, 44, 28, 46, 49, 41, 47, 43, 45] },
   { _id: "bank-mismatch", public_ref: "DEMO-ACCT-002", masked_number: "•••• 2718", customer_name: "Ravi Tailors", city: "Bengaluru", status: "active", scenario_hint: "Different business identity", weeks: [20, 22, 18, 25, 19, 21, 23, 17, 24, 20, 22, 18] },
@@ -160,7 +175,7 @@ export function railsFor(id) {
         trustClass: "verified_simulated",
         provenance: "synthetic",
         identity_match: true,
-        payload: { taxable_sales_paise: 90000000 },
+        payload: { taxable_sales_paise: 90000000, period_from: "2026-01-05", period_to: "2026-03-23" },
         createdAt: now,
       },
     ];
@@ -168,7 +183,7 @@ export function railsFor(id) {
   return [
     { shopId: id, type: "aa", trustClass: "verified_simulated", provenance: "synthetic", identity_match: true, createdAt: now },
     { shopId: id, type: "upi", trustClass: "verified_simulated", provenance: "synthetic", identity_match: true, createdAt: now },
-    { shopId: id, type: "gst", trustClass: "verified_simulated", provenance: "synthetic", identity_match: true, payload: { taxable_sales_paise: 50000000 }, createdAt: now },
+    { shopId: id, type: "gst", trustClass: "verified_simulated", provenance: "synthetic", identity_match: true, payload: { taxable_sales_paise: 50000000, period_from: "2026-01-05", period_to: "2026-03-23" }, createdAt: now },
   ];
 }
 

@@ -41,7 +41,7 @@ def investigate(
     if duplicate_count:
         flags.append({"code": "DUPLICATE_RECORDS", "count": duplicate_count})
 
-    has_pdf = any(rail.get("rail_type") == "pdf" for rail in state.get("rails", []))
+    has_pdf = any((rail.get("rail_type") or rail.get("type")) == "pdf" for rail in state.get("rails", []))
     verified_count = state.get("verified_rail_count", 0)
     if has_pdf and not verified_count:
         gate = "MORE_EVIDENCE"

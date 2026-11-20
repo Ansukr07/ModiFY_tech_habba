@@ -1,0 +1,106 @@
+{
+  "selected_model": "xgboost",
+  "validation_thresholds": {
+    "xgboost": {
+      "best_cv_f1": 0.04197102992342978,
+      "best_f1": {
+        "threshold": 0.8200000000000001,
+        "precision": 0.12392638036809817,
+        "recall": 0.1074468085106383,
+        "f1": 0.1150997150997151
+      },
+      "best_params": {
+        "subsample": 0.7,
+        "scale_pos_weight": 66.07175398633258,
+        "reg_lambda": 1,
+        "n_estimators": 100,
+        "min_child_weight": 15,
+        "max_depth": 3,
+        "learning_rate": 0.08,
+        "gamma": 2,
+        "colsample_bytree": 0.85
+      }
+    },
+    "random_forest": {
+      "best_cv_f1": 0.0678886897394285,
+      "best_f1": {
+        "threshold": 0.93,
+        "precision": 0.43373493975903615,
+        "recall": 0.03829787234042553,
+        "f1": 0.07038123167155426
+      },
+      "best_params": {
+        "n_estimators": 150,
+        "min_samples_leaf": 3,
+        "max_features": "sqrt",
+        "max_depth": null
+      }
+    }
+  },
+  "per_model_test_results": {
+    "xgboost": {
+      "threshold": 0.8200000000000001,
+      "confusion_matrix": [
+        [
+          61429,
+          726
+        ],
+        [
+          836,
+          105
+        ]
+      ],
+      "accuracy": 0.9752440725244073,
+      "recall": 0.11158342189160468,
+      "f1": 0.11851015801354402
+    },
+    "random_forest": {
+      "threshold": 0.93,
+      "confusion_matrix": [
+        [
+          62102,
+          53
+        ],
+        [
+          901,
+          40
+        ]
+      ],
+      "accuracy": 0.9848801825789274,
+      "recall": 0.04250797024442083,
+      "f1": 0.07736943907156674
+    }
+  },
+  "train_at_validation_f1_threshold": {
+    "threshold": 0.8200000000000001,
+    "confusion_matrix": [
+      [
+        286853,
+        3202
+      ],
+      [
+        3915,
+        475
+      ]
+    ],
+    "accuracy": 0.9758291022092411,
+    "recall": 0.1082004555808656,
+    "f1": 0.11776372877153837
+  },
+  "test_at_validation_f1_threshold": {
+    "threshold": 0.8200000000000001,
+    "confusion_matrix": [
+      [
+        61429,
+        726
+      ],
+      [
+        836,
+        105
+      ]
+    ],
+    "accuracy": 0.9752440725244073,
+    "recall": 0.11158342189160468,
+    "f1": 0.11851015801354402
+  }
+}

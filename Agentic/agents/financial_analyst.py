@@ -12,17 +12,34 @@ from zerocibil.tools.finance import (
 )
 
 
+def _statement_result(state: dict[str, Any], rows: list[dict[str, Any]], quality: dict[str, Any], weeks: list[dict[str, int]] | None = None) -> dict[str, Any] | None:
+    if not state.get("statement_intake") and not state.get("statement_rows"):
+        return None
+    intake = dict(state.get("statement_intake") or {})
+    intake.update({
+        "normalized_rows": len(rows),
+        "week_count": len(weeks or []),
+        "quality_passed": quality["passed"],
+        "source": "bank_statement_pdf",
+    })
+    return intake
+
+
 def analyze(
     state: dict[str, Any], policy: Policy = DEFAULT_POLICY
 ) -> dict[str, Any]:
     rows = normalize_cashflows(state.get("cashflows", []), state.get("rails", []))
     quality = quality_check(rows)
     if not quality["passed"]:
-        return {
+        failed = {
             "cashflows": rows,
             "data_quality": quality,
             "status": "DATA_QUALITY_FAILED",
         }
+        intake = _statement_result(state, rows, quality)
+        if intake:
+            failed["statement_intake"] = intake
+        return failed
 
     weeks = weekly_series(rows)
     features, missing = build_features(rows, weeks, state.get("rails", []))
@@ -35,13 +52,13 @@ def analyze(
         )
 
     has_bank_rail = any(
-        rail.get("rail_type") == "aa"
-        and rail.get("trust_class") in {"verified", "verified_simulated"}
+        (rail.get("rail_type") or rail.get("type")) == "aa"
+        and (rail.get("trust_class") or rail.get("trustClass")) in {"verified", "verified_simulated"}
         for rail in state.get("rails", [])
     )
-    variant = "full" if has_bank_rail else "inflow_only"
+    variant = "B-full" if has_bank_rail else "B-inflow"
 
-    return {
+    result = {
         "cashflows": rows,
         "data_quality": quality,
         "weekly_series": weeks,
@@ -51,3 +68,7 @@ def analyze(
         "reconciliation": reconciliation,
         "supporting_signals": signals,
     }
+    intake = _statement_result(state, rows, quality, weeks)
+    if intake:
+        result["statement_intake"] = intake
+    return result
