@@ -40,7 +40,8 @@ export function Evidence() {
         </div>
         <section className="queue-twins">
           <h2>Fairness twins</h2>
-          <p className="muted">Seed fixture comparison: {sameTerms ? "same verdict, principal, rate, tenure, and cadence" : "terms differ or a fixture is missing"}. These preset values do not prove fairness of a trained model.</p>
+          <p className="muted">Seed fixture comparison: {sameTerms ? "same verdict and complete terms" : "terms differ or a fixture is missing"}. These preset values do not prove fairness of a trained model.</p>
+          <p className="muted scroll-hint">Scroll the table sideways to compare Twin B.</p>
           {twinRows.length > 0 && <div className="table-scroll" role="region" aria-label="Fairness twin terms" tabIndex="0">
             <table className="twin-table">
               <thead><tr><th scope="col">Measure</th><th scope="col">Twin A</th><th scope="col">Twin B</th></tr></thead>
