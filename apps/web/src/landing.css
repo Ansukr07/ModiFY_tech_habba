@@ -99,3 +99,19 @@
 }
 .landing-phone-content { zoom:.75; width:133.333%; transform-origin:top left; }
 @media (max-width:700px) { .landing-phone-content { zoom:1; width:100%; } }
+
+.landing-phone-content,.landing-phone-content * { box-sizing:border-box; }
+.landing-phone-header { gap:8px; margin:28px 0 34px; font-size:15px; }
+.landing-phone-header>span:nth-child(2) { gap:5px; }
+.landing-phone-header svg { width:15px; height:15px; }
+.landing-phone-label { font-size:13px; margin-bottom:14px; }
+.landing-phone-amount { font-size:clamp(28px,2.3vw,42px); }
+.landing-phone-amount span { font-size:11px; }
+.landing-phone-terms { gap:5px; margin:15px 0 34px; }
+.landing-phone-terms span { padding:6px 7px; font-size:10px; }
+.landing-phone-black { padding:14px; border-radius:20px; }
+.landing-phone-black-heading { font-size:14px; }
+.landing-rail-cards { gap:7px; margin-top:14px; }
+.landing-rail-cards>div { min-height:115px; padding:10px; border-radius:14px; font-size:10px; }
+.landing-rail-cards strong { font-size:16px; }
+@media (max-width:700px) { .landing-phone-content { zoom:1; width:100%; } .landing-phone-header { margin:28px 0 35px; font-size:12px; } .landing-phone-label { font-size:11px; } .landing-phone-amount { font-size:30px; } .landing-phone-amount span { font-size:9px; } .landing-phone-terms { margin:18px 0 35px; } .landing-phone-terms span { font-size:8px; padding:5px; } .landing-phone-black { padding:12px; border-radius:16px; } .landing-phone-black-heading { font-size:12px; } .landing-rail-cards { gap:6px; } .landing-rail-cards>div { min-height:100px; padding:9px; border-radius:12px; font-size:9px; } .landing-rail-cards strong { font-size:13px; } }
