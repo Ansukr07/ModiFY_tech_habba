@@ -12,6 +12,7 @@ export function LenderDesk() {
 
   const twins = SHOPS.filter((s) => s.id.startsWith("twin"));
   const twinSame = twins.length === 2 && ["verdict", "principal", "rateBps", "tenureMonths", "cadence"].every((key) => twins[0][key] === twins[1][key]);
+  const hasVerifiedRail = shop.rails.some((rail) => rail.trustClass === "verified");
 
   return (
     <Shell role="lender">
@@ -30,7 +31,7 @@ export function LenderDesk() {
         <div className="desk">
           <section className="panel">
             <h2>Data trust</h2>
-            <p className="muted">Sample authenticity estimate: {Math.round(shop.pAuth * 100)}%. PDF uploads never set the limit.</p>
+            <p className="muted">{hasVerifiedRail ? `Sample authenticity estimate: ${Math.round(shop.pAuth * 100)}%.` : "Authenticity assessment skipped: no verified rail."} PDF uploads never set the limit.</p>
             {shop.rails.map((r) => (
               <div className="rail" key={r.type}>
                 <span>{r.label}</span>
@@ -47,6 +48,7 @@ export function LenderDesk() {
             <p className="muted">
               Sample lean-month ratio {Math.round(shop.leanMonthRatio * 100)}%. Black bar marks the lowest week.
             </p>
+            <p className="muted">{hasVerifiedRail ? `Sample lean-period stress estimate: ${Math.round(shop.pStress * 100)}%. This is a synthetic proxy, not a real default probability.` : "Stress model skipped until operations are verified."}</p>
             <div className="weekbars" role="img" aria-label={`Synthetic weekly inflow index: ${shop.weeks.join(", ")}. Lowest week is ${Math.min(...shop.weeks)}.`}>
               {shop.weeks.map((w, i) => {
                 const max = Math.max(...shop.weeks);
@@ -87,6 +89,7 @@ export function LenderDesk() {
             <p className="offer-amt">
               {shop.principal ? paiseToInr(shop.principal) : verdictLabel(shop.verdict)}
             </p>
+            {shop.principal > 0 && shop.principal < shop.requestedAmount && <p className="muted">Sample counteroffer: {paiseToInr(shop.principal)} against {paiseToInr(shop.requestedAmount)} requested.</p>}
             <dl className="terms">
               <dt>Tenure</dt>
               <dd>{shop.tenureMonths ? `${shop.tenureMonths} months` : "—"}</dd>

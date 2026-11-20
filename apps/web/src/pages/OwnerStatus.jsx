@@ -24,9 +24,10 @@ export function OwnerStatus() {
           {shop.principal ? paiseToInr(shop.principal) : verdictLabel(shop.verdict)}
         </p>
         {shop.principal > 0 && (
-          <p className="muted">
-            {shop.tenureMonths} months · {(shop.rateBps / 100).toFixed(1)}% p.a. · {shop.cadence} repayment
-          </p>
+          <>
+            {shop.principal < shop.requestedAmount && <p className="muted">Sample counteroffer: you asked for {paiseToInr(shop.requestedAmount)}. This example proposes a smaller amount.</p>}
+            <p className="muted">{shop.tenureMonths} months · {(shop.rateBps / 100).toFixed(1)}% p.a. · {shop.cadence} repayment</p>
+          </>
         )}
         {shop.conditions.length > 0 && <ul className="muted">{shop.conditions.map((condition) => <li key={condition}>{condition}</li>)}</ul>}
         <Link className="btn btn-secondary" to="/queue">
