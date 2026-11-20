@@ -1,127 +1,101 @@
-import { useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
-import { Shell } from "../components/Shell.jsx";
+import { useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { Mark } from "../components/Mark.jsx";
 import { SHOPS, paiseToInr, verdictLabel } from "../data/seed.js";
+import "../dashboard.css";
+
+const examples = SHOPS.filter((shop) => !shop.id.startsWith("twin"));
+
+function SideIcon({ kind }) {
+  const paths = {
+    dashboard: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
+    queue: <><path d="M4 5h16M4 12h16M4 19h16"/><path d="M7 4v2M7 11v2M7 18v2"/></>,
+    evidence: <><path d="M4 20V4h16v16H4Z"/><path d="m8 15 3-4 3 2 3-5"/></>,
+  };
+  return <svg aria-hidden="true" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{paths[kind]}</svg>;
+}
 
 export function LenderDesk() {
   const { id } = useParams();
-  const shop = SHOPS.find((s) => s.id === id) || SHOPS[0];
+  const navigate = useNavigate();
+  const shop = SHOPS.find((item) => item.id === id);
   const [lean, setLean] = useState(0);
-  const [fair, setFair] = useState(shop.ownerFlags?.gender || "woman");
 
-  const priced = useMemo(() => {
-    const factor = 1 - lean * 0.08;
-    const principal = Math.round(shop.principal * Math.max(0, factor));
-    return { principal, emi: Math.round(shop.maxEmi * Math.max(0, factor)) };
-  }, [lean, shop]);
+  if (!shop) return <div className="dashboard-missing"><h1>Sample not found</h1><Link to="/queue">Return to queue</Link></div>;
 
-  const twinSame =
-    shop.principal ===
-    (SHOPS.find((s) => s.id === (shop.id === "twin-a" ? "twin-b" : "twin-a"))?.principal ??
-      shop.principal);
+  const verified = shop.rails.filter((rail) => rail.trustClass === "verified");
+  const twins = SHOPS.filter((item) => item.id.startsWith("twin"));
+  const twinSame = twins.length === 2 && ["verdict", "principal", "rateBps", "tenureMonths", "cadence"].every((key) => twins[0][key] === twins[1][key]);
+  const lowest = shop.weeks.indexOf(Math.min(...shop.weeks));
+  const stressedWeeks = shop.weeks.map((week, index) => index === lowest ? week * (1 - lean * 0.08) : week);
+  const max = Math.max(...shop.weeks);
+  const points = stressedWeeks.map((week, index) => `${24 + index * 672 / (shop.weeks.length - 1)},${202 - week / max * 160}`).join(" ");
+  const chartLabel = `Synthetic weekly inflow index: ${stressedWeeks.map((value) => Math.round(value)).join(", ")}. Lowest observed week is ${Math.min(...shop.weeks)}.`;
 
   return (
-    <Shell role="lender">
-      <div className="page">
-        <div className="banner">
-          <span className="sticker synth">Synthetic demo</span>
-          <span className="pill outline">No bureau file</span>
-          <span className="pill black">{verdictLabel(shop.verdict)}</span>
-          <span className="muted">
-            {shop.name} · {shop.category} · {shop.city}
-          </span>
-        </div>
+    <div className="dashboard-frame">
+      <a className="skip" href="#main">Skip to assessment</a>
+      <div className="dashboard-window">
+        <header className="dashboard-topbar">
+          <Link to="/" className="dashboard-logo" aria-label="ZeroCIBIL home"><span><Mark size={20}/></span> ZeroCIBIL</Link>
+          <span className="dashboard-workspace">Lender workspace <span>·</span> Synthetic demo</span>
+          <div className="dashboard-top-actions"><Link to="/queue">All applications</Link><Link to="/evidence">Evidence</Link><Link className="dashboard-home" to="/">Switch role →</Link></div>
+        </header>
 
-        <div className="desk">
-          <section className="panel">
-            <h2>Data trust</h2>
-            <p className="muted">PDFs never set the limit. P(shop-owned data) {Math.round(shop.pAuth * 100)}%.</p>
-            {shop.rails.map((r) => (
-              <div className="rail" key={r.type}>
-                <span>{r.label}</span>
-                <span>{r.trustClass === "verified" ? "Verified (sim)" : "Unverified"}</span>
-              </div>
-            ))}
-            <p className="muted" style={{ marginTop: 12 }}>
-              GST–UPI and payer mix live in the model. Mule-like files stay declined even with high inflow.
-            </p>
-          </section>
+        <aside className="dashboard-sidebar" aria-label="Lender navigation">
+          <p>GENERAL</p>
+          <Link className="dashboard-sidebar-active" to={`/application/${shop.id}`}><SideIcon kind="dashboard" /> Dashboard</Link>
+          <Link to="/queue"><SideIcon kind="queue" /> Application queue</Link>
+          <Link to="/evidence"><SideIcon kind="evidence" /> Evidence</Link>
+          <p>SEED APPLICATIONS</p>
+          {examples.map((example) => <Link key={example.id} className={`dashboard-seed-link ${example.id === shop.id ? "dashboard-current-shop" : ""}`} to={`/application/${example.id}`}>{example.name}</Link>)}
+        </aside>
 
-          <section className="panel">
-            <h2>Ninety-day operations</h2>
-            <p className="muted">
-              Lean-month ratio {Math.round(shop.leanMonthRatio * 100)}%. Black bar is the stressed week.
-            </p>
-            <div className="weekbars" aria-label="Weekly inflows, synthetic">
-              {shop.weeks.map((w, i) => {
-                const max = Math.max(...shop.weeks);
-                const leanIdx = shop.weeks.indexOf(Math.min(...shop.weeks));
-                return (
-                  <button type="button" key={i} tabIndex={-1} aria-hidden="true">
-                    <i
-                      className={i === leanIdx ? "lean" : ""}
-                      style={{ height: `${(w / max) * 100}%` }}
-                    />
-                  </button>
-                );
-              })}
-            </div>
-            <label className="muted" htmlFor="lean">
-              Stress lean weeks ({lean})
-            </label>
-            <input
-              id="lean"
-              className="slider"
-              type="range"
-              min="0"
-              max="6"
-              value={lean}
-              onChange={(e) => setLean(Number(e.target.value))}
-            />
-            <ul className="muted">
-              {shop.drivers.map((d) => (
-                <li key={d}>{d}</li>
-              ))}
-            </ul>
-          </section>
+        <main id="main" className="dashboard-main">
+          <div className="dashboard-heading">
+            <div><h1>Assessment dashboard</h1><p>Review the shop’s trust, cashflow and proposed terms in one place.</p></div>
+            <label className="dashboard-select">Sample shop <select value={shop.id} onChange={(event) => { setLean(0); navigate(`/application/${event.target.value}`); }}>{SHOPS.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          </div>
+          <div className="dashboard-case"><span className="dashboard-label">SYNTHETIC APPLICATION</span><span>{shop.name} · {shop.category} · {shop.city}</span><span className={`dashboard-verdict dashboard-verdict-${shop.verdict.toLowerCase()}`}>{verdictLabel(shop.verdict)}</span></div>
+          <p className="dashboard-disclaimer">Illustrative fixture only. No submitted application, disbursal, live rail connection or trained-model result is shown.</p>
 
-          <section className="panel">
-            <h2>Terms</h2>
-            <p className="muted">Baseline: decline (no CIBIL). ZeroCIBIL prices capacity.</p>
-            <p className="offer-amt">
-              {shop.principal ? paiseToInr(priced.principal) : verdictLabel(shop.verdict)}
-            </p>
-            <dl className="terms">
-              <dt>Tenure</dt>
-              <dd>{shop.tenureMonths ? `${shop.tenureMonths} months` : "—"}</dd>
-              <dt>Rate</dt>
-              <dd>{shop.rateBps ? `${(shop.rateBps / 100).toFixed(1)}% p.a.` : "—"}</dd>
-              <dt>Cadence</dt>
-              <dd>{shop.cadence}</dd>
-              <dt>Max EMI from lean surplus</dt>
-              <dd>{shop.maxEmi ? paiseToInr(priced.emi) : "—"}</dd>
-              <dt>Asked</dt>
-              <dd>{paiseToInr(shop.requestedAmount)}</dd>
-            </dl>
-            {shop.conditions.map((c) => (
-              <p className="muted" key={c}>
-                {c}
-              </p>
-            ))}
-            <div className="field">
-              <label htmlFor="fair">Fairness: owner flag (cashflow held)</label>
-              <select id="fair" value={fair} onChange={(e) => setFair(e.target.value)}>
-                <option value="woman">Woman-owned</option>
-                <option value="man">Man-owned</option>
-              </select>
-            </div>
-            <p className="muted">
-              Terms do not move with the flag
-              {twinSame ? " — twins priced equal." : "."} Current flag: {fair}.
-            </p>
-          </section>
-        </div>
+          <div className="dashboard-metrics">
+            <section><h2>Requested amount</h2><strong>{paiseToInr(shop.requestedAmount)}</strong><p>Owner’s sample request</p></section>
+            <section><h2>Proposed principal</h2><strong>{shop.principal ? paiseToInr(shop.principal) : "—"}</strong><p>{shop.principal ? "Capacity-constrained sample offer" : "No offer for this sample"}</p></section>
+            <section><h2>Authenticity estimate</h2><strong>{verified.length ? `${Math.round(shop.pAuth * 100)}%` : "—"}</strong><p>{verified.length ? `${verified.length} simulated verified rail${verified.length === 1 ? "" : "s"}` : "No verified operational rail"}</p></section>
+            <section><h2>Lean-period stress</h2><strong>{verified.length ? `${Math.round(shop.pStress * 100)}%` : "—"}</strong><p>Synthetic proxy, not real default</p></section>
+          </div>
+
+          <div className="dashboard-analysis">
+            <section className="dashboard-chart-card">
+              <div className="dashboard-card-heading"><div><h2>Weekly shop activity</h2><p>Synthetic inflow index · {shop.weeks.length} observed weeks</p></div><span className="dashboard-chart-tag">Lean ratio {Math.round(shop.leanMonthRatio * 100)}%</span></div>
+              <svg className="dashboard-line-chart" viewBox="0 0 720 225" role="img" aria-label={chartLabel} preserveAspectRatio="none">
+                {[42,82,122,162,202].map((y) => <line key={y} x1="24" x2="696" y1={y} y2={y} stroke="#e7eaf1" strokeWidth="1" />)}
+                <polygon points={`24,202 ${points} 696,202`} fill="#425cff" opacity="0.08" />
+                <polyline points={points} fill="none" stroke="#171f3d" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+                <circle cx={24 + lowest * 672 / (shop.weeks.length - 1)} cy={202 - stressedWeeks[lowest] / max * 160} r="6" fill="#425cff" stroke="white" strokeWidth="3" />
+              </svg>
+              <div className="dashboard-chart-axis"><span>Week 1</span><span>Week {Math.ceil(shop.weeks.length / 2)}</span><span>Week {shop.weeks.length}</span></div>
+              <label className="dashboard-slider-label" htmlFor="dashboard-lean">Explore lowest-week reduction <strong>{lean * 8}%</strong></label>
+              <input id="dashboard-lean" type="range" min="0" max="6" value={lean} onChange={(event) => setLean(Number(event.target.value))} />
+              <p className="dashboard-chart-note">This slider changes the chart only. The sample terms below stay fixed until an underwriting API can recompute a scenario.</p>
+            </section>
+            <section className="dashboard-trust-card">
+              <div className="dashboard-card-heading"><div><h2>Data trust</h2><p>Source and provenance</p></div></div>
+              {shop.rails.map((rail) => <div className="dashboard-rail" key={rail.type}><span>{rail.label}</span><strong className={rail.trustClass === "verified" ? "dashboard-verified" : "dashboard-unverified"}>{rail.trustClass === "verified" ? "Verified (sim)" : "Unverified"}</strong></div>)}
+              <p className="dashboard-trust-note">PDF uploads do not set the limit. A missing verified rail leads to collect-data status.</p>
+            </section>
+          </div>
+
+          <div className="dashboard-detail-grid">
+            <section className="dashboard-detail-card"><h2>Proposed terms</h2><dl><dt>Verdict</dt><dd>{verdictLabel(shop.verdict)}</dd><dt>Principal</dt><dd>{shop.principal ? paiseToInr(shop.principal) : "—"}</dd><dt>Tenure</dt><dd>{shop.tenureMonths ? `${shop.tenureMonths} months` : "—"}</dd><dt>Annual rate</dt><dd>{shop.rateBps ? `${(shop.rateBps / 100).toFixed(1)}%` : "—"}</dd><dt>Cadence</dt><dd>{shop.cadence}</dd><dt>Repayment</dt><dd>{shop.weeklyRepayment ? `${paiseToInr(shop.weeklyRepayment)} weekly` : "—"}</dd><dt>Maximum weekly capacity</dt><dd>{shop.maxEmi ? paiseToInr(shop.maxEmi) : "—"}</dd></dl>{shop.principal > 0 && shop.principal < shop.requestedAmount && <p className="dashboard-counteroffer">Counteroffer below the requested amount.</p>}</section>
+            <section className="dashboard-detail-card"><h2>Why this result</h2><ul>{shop.drivers.map((driver) => <li key={driver}>{driver}</li>)}</ul><h3>Conditions and next steps</h3>{shop.conditions.length ? <ul>{shop.conditions.map((condition) => <li key={condition}>{condition}</li>)}</ul> : <p>No additional conditions in this fixture.</p>}</section>
+          </div>
+
+          <section className="dashboard-table-section"><div className="dashboard-card-heading"><div><h2>Sample applications</h2><p>Explore how different evidence affects the displayed outcome.</p></div><Link to="/queue">View queue →</Link></div><div className="dashboard-table-scroll"><table><thead><tr><th scope="col">Shop</th><th scope="col">Evidence</th><th scope="col">Requested</th><th scope="col">Proposed</th><th scope="col">Status</th></tr></thead><tbody>{examples.map((item) => <tr key={item.id}><th scope="row"><Link to={`/application/${item.id}`}>{item.name}</Link></th><td>{item.rails.map((rail) => rail.type.toUpperCase()).join(" · ")}</td><td>{paiseToInr(item.requestedAmount)}</td><td>{item.principal ? paiseToInr(item.principal) : "—"}</td><td>{verdictLabel(item.verdict)}</td></tr>)}</tbody></table></div></section>
+          <p className="dashboard-chart-note">Seed twin comparison: {twinSame ? "same verdict, principal, rate, tenure and cadence." : "terms differ; review the fixtures."} This does not establish model fairness.</p>
+        </main>
       </div>
-    </Shell>
+    </div>
   );
 }

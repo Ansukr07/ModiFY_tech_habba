@@ -3,6 +3,7 @@ import { Shell } from "../components/Shell.jsx";
 import { SHOPS, paiseToInr, verdictLabel } from "../data/seed.js";
 
 export function LenderQueue() {
+  const examples = SHOPS.filter((s) => !s.id.startsWith("twin"));
   return (
     <Shell role="lender">
       <div className="page">
@@ -11,9 +12,9 @@ export function LenderQueue() {
           <span className="pill outline">No bureau file on any row</span>
         </div>
         <h1 className="page-title">Thin-file queue</h1>
-        <p className="muted">Baseline policy rejects every row. Open a file to price terms.</p>
+        <p className="muted">{examples.length} fixed synthetic assessments. Open a shop to inspect its sample terms and evidence.</p>
         <div className="queue">
-          {SHOPS.filter((s) => !s.id.startsWith("twin")).map((s) => (
+          {examples.map((s) => (
             <Link key={s.id} className="q-row" to={`/application/${s.id}`}>
               <div>
                 <strong>{s.name}</strong>
@@ -35,10 +36,18 @@ export function LenderQueue() {
               >
                 {verdictLabel(s.verdict)}
               </span>
-              <span className="muted">Baseline decline →</span>
+              <span className="muted">Open sample →</span>
             </Link>
           ))}
         </div>
+        <section className="queue-twins">
+          <h2>Fairness fixtures</h2>
+          <p className="muted">The two synthetic twins have the same operating data and different protected flags. Compare their recorded terms; the model fairness test is still pending.</p>
+          <div className="twin-links">
+            <Link className="btn btn-secondary" to="/application/twin-a">Open twin A</Link>
+            <Link className="btn btn-secondary" to="/application/twin-b">Open twin B</Link>
+          </div>
+        </section>
       </div>
     </Shell>
   );

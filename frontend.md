@@ -3,6 +3,9 @@
 **Status:** Implementation plan, not a claim that these features are already connected.
 **Authority:** [spec.md](spec.md) defines product and underwriting; [design.md](design.md) defines visual design. API contracts are in [backend.md](backend.md). If these plans conflict with either source, the source wins.
 
+**Current frontend state:** The React app is a navigable synthetic fixture demo. `/apply` offers fixed sample shops; it does not save owner data or submit applications. The API-backed application flow, scoring, and scenario calculations below remain implementation requirements once the backend exists.
+The seed charts contain 6–12 weekly samples; the future 90-day board requires daily source records from the backend.
+
 ## 1. Purpose and boundaries
 
 Build a two-sided React application for credit-invisible MSMEs: owners submit operational evidence and understand their status; lenders inspect authenticity, lean-period capacity, proposed terms, and evidence. Auditor/policy users inspect decision history and fairness through lender-authorized read views in the demo; no separate auditor login is required by the source.
@@ -144,3 +147,13 @@ Acceptance:
 ## 9. Policy decisions builders must not invent
 
 The source leaves the max ticket (₹50k–₹3 lakh range), exact haircut table, numeric annual rates, history cutoffs, tiny test-limit exception, and step-up conditions unresolved. Weekly is the demo default; monthly requires consistent policy periods. Read approved values from versioned backend policy. Until defined, use UNVERIFIED with no offer for zero verified rails and do not fabricate rates, tickets, or step-up promises.
+
+## 10. Reference-image entry screen
+
+Use `ui inspo.jpg` as a composition reference: a spacious centred Source Serif 4 promise, a short operational explanation, black and outline pill actions, then a central device mockup flanked by two offset evidence widgets. Keep the product's existing 2×2 mark and paper/ink/lilac palette. The device shows an explicitly synthetic ZeroCIBIL lean-month and offer example; side widgets explain verified rails and the PDF limitation. The reference's rating, partner logos, return percentage, and app download are not product facts and must not appear. On narrow screens the device and widgets stack in reading order, and the two entry actions remain visible before the illustration.
+
+The implemented landing page follows the reference's grey frame, white canvas, large two-line heading, paired pills, phone composition, curved backdrop, source-name band, and editorial lower section. Its source names and offer figures are explicitly synthetic. The owner and lender actions route into the existing demo; live application and underwriting actions remain separate implementation work.
+
+## 11. Lender dashboard reference
+
+Use `dashboard insp.jpg` for `/application/:id`: blue outer stage, white workspace, slim sidebar, compact top toolbar, four summary figures, a dominant weekly-activity chart, trust detail, terms, and a navigable sample-application table. Keep this route denser than the landing page. Blue is a workspace accent here; it does not change the owner flow or the landing identity. On mobile, preserve queue and evidence navigation, stack cards, and make the table horizontally scrollable with its column labels. The chart slider is illustrative while the underwriting API is absent, so it must not change or imply recalculated offers.
