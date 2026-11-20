@@ -2,7 +2,7 @@
 
 **Product:** ZeroCIBIL  
 **Scope:** Lender queue, application assessment, decision evidence, and portfolio evidence  
-**Status:** Proposed product spec, checked against the current prototype on 20 November 2026
+**Status:** Detailed target spec with current implementation gaps, checked against the lender prototype on 20 November 2026
 
 ## 1. Problem and outcome
 
@@ -16,13 +16,15 @@ This spec describes the intended behavior. It does not claim that a displayed mo
 
 | Area | Present now | Limit to address |
 |---|---|---|
-| Queue | Applications, requested amount, status/verdict, simulated verified-rail count, seed-and-score action | Shop shown mostly as an ID; no sorting, filtering, urgency, evidence freshness, or reason for review |
-| Assessment | Requested and proposed principal, `p_auth`, `p_stress`, verdict, term fields, model drivers, conditions | The capacity calculation and counter-offer are not visually explained; probability labels need stronger interpretation |
-| Cashflow | A line of weekly **inflows**, with a lean-inflow slider | No outflows, net surplus, weakest four-week window, labelled axes, time period, or repayment-capacity overlay |
-| Trust | Rail type and trust class, PDF warning | No rail-level provenance, reconciliation gap, identity match, freshness, or actionable missing-evidence state |
-| Scenario | Backend stress response and scenario principal | Only one slider, no baseline-versus-scenario comparison across terms and capacity; requests can return out of order |
-| Lender actions | Request evidence and decline override with a reason | Effective override is not shown as an application state; no reduce-terms control despite API support; no evidence-request lifecycle |
-| Evidence and audit | Summary count, twin fairness check, report and audit endpoints | Summary is a single line; report and audit render as raw JSON; twins result gives little context |
+| Queue | Shop name/type, request, assessment date, simulated rail count, review reason, workflow/verdict filters and a six-case pipeline summary; responsive card rows and a seed action | No explicit sorting or urgency, freshness/coverage signal, last-updated time, or clickable pipeline segments. Assessment status and verdict filters are separate. |
+| Assessment | Requested and proposed principal, authenticity estimate, lean-period stress proxy, verdict, policy drivers/conditions; five sections; overview summary compares request, policy maximum and proposal, shows the counter-offer gap and conditions, repayment terms, effective lender action and model/policy/input revision provenance | No distinct hard-gate vs model-signal grouping; comparison is numeric cards rather than a proportional rupee scale. |
+| Cashflow | Weekly inflow, outflow and net chart; rupee scale, point tooltips and keyboard focus, zero line, policy-selected weakest four-week highlight, broken line segments at missing calendar weeks, accessible weekly table; scorer and chart share calendar-week semantics | Waterfall can make the request/proposal/final maximum comparison more prominent; chart still has no persistent per-point value labels when not hovered/focused. |
+| Trust | Simulated rail count and per-rail type, provenance, added date and identity match; GST/UPI values and gap; PDF limitation | Coverage dates, freshness, eligibility effect and mismatch threshold are missing; zero-rail evidence request is not guided from the evidence panel. |
+| Scenario | Inflow and outflow sliders; baseline vs scenario surplus, installment capacity, maximum principal, proposal, verdict and terms; reset and stale-response guard | No explicit zero-capacity explanation; only saved decision can be stressed; slider changes issue requests immediately. |
+| Lender actions | Request evidence, reduce principal within current proposal, decline confirmation; effective action shown on refresh with reason/time/reference and previous/new principal for a reduction; owner can resubmit a listed synthetic account for review on the same application; verified bank review returns the case to lender assessment and a failed review returns it to awaiting evidence | No asynchronous notification; only the existing synthetic bank-account review route is available as an evidence response, so UPI/GST/identity-specific response workflows remain incomplete. |
+| Evidence, report and audit | Portfolio counts, synthetic fairness twin comparison and delta rows; readable report/print with capacity math; chronological audit timeline | Twin pass is fixture-only; report can be stale after a later override; audit omits some requested actor/version/source detail; metrics and baseline are not evaluation-grade. |
+
+The current browser verification previously found six seeded cases and all assessment sections render. Some persisted demo decisions were created before repayment fields existed: the terms and policy maximum appeared blank. The assessment now flags such a record and offers a refresh; this behavior still depends on the scoring service being available and a lender invoking reassessment. Current visual changes have build and policy-test evidence, but need another live lender-session review.
 
 The backend already has endpoints for scoring, stress tests, overrides, audit, reports, and fairness. The current UI should use these before new endpoints are invented. Where the present response is too thin, the data contract below states the minimum addition.
 
@@ -34,7 +36,7 @@ The backend already has endpoints for scoring, stress tests, overrides, audit, r
 
 - Show shop name, business type, requested amount, latest assessment time, current status, verdict, verified-rail count, and one concise review reason. Do not display only a sliced shop ID as the primary name.
 - Group counts into **Needs assessment**, **Needs evidence**, **Ready for review**, and **Reviewed**. These are workflow labels, separate from underwriting verdicts (`UNVERIFIED`, `THIN_FILE`, `STANDARD`, `STEP_UP`, `DECLINE`).
-- Filters: workflow state and verdict. Sort by oldest unreviewed first, with explicit last-updated date. Search by shop name or application ID if the queue grows beyond the seeded demo.
+- Filters: workflow state and verdict (implemented). Add sort by oldest unreviewed first and explicit last-updated date; retain search by shop name or application ID.
 - Each row shows a plain data label, such as **Synthetic demo · simulated UPI + GST**. A PDF-only case must be visibly distinct from one with verified simulated rails.
 - The empty state offers the existing demo seed action. Loading, scoring failure, and partial data states must retain the last usable queue instead of looking like zero applications.
 
@@ -50,25 +52,25 @@ The summary should answer:
 2. **How much?** Requested amount, supportable maximum, proposed amount, and counter-offer gap in rupees and percent.
 3. **On what terms?** Annual rate, tenure, cadence, installment amount, total repayment, and conditions. Distinguish policy-proposed terms from a lender's effective action.
 
-Show assessment timestamp, model and policy versions, input revision, and a link to the audit trail. These are essential when an owner adds evidence after assessment.
+The current summary shows assessment timestamp, model and policy versions, input revision, and a link to lender actions/audit. These are essential when an owner adds evidence after assessment. Keep saved model recommendation visually distinct from the current effective lender action.
 
 ## 4. Evidence and visualization requirements
 
 ### 4.1 Cashflow and capacity board — highest priority
 
-Replace the inflow-only sparkline with a labelled weekly chart over the observed history. Plot inflow, outflow, and **net operating surplus** using the same underlying transactions and units; a zero line makes negative weeks clear. Mark the weakest rolling four-week period used by policy. Tooltips or an accessible data table show week start, inflow, outflow, and net in rupees. Show the observation window and number of weeks, including missing weeks explicitly instead of silently connecting across them.
+The current prototype plots weekly inflow, outflow, and **net operating surplus** with a rupee axis and zero line, highlights the exact four calendar weeks selected by policy, breaks lines at missing weeks, and provides an accessible weekly table. Keyboard-focusable chart points expose week and rupee value in tooltips. The scorer fills missing calendar weeks with zero activity before computing the rolling window; the chart labels those periods as no records.
 
 Beside the chart, render a capacity calculation waterfall:
 
 `Weakest 4-week net → weekly lean surplus → trust/stress/history haircut → maximum affordable installment → maximum principal`
 
-Use exact backend values and policy version. If the backend does not return an intermediate value, add it to the decision response; the browser must not reconstruct underwriting arithmetic. Label the installment period accurately (weekly versus monthly), and use the same cadence in chart comparison. Show why capacity reaches zero for a decline or unverified case.
+The lender view now shows the weakest four-week net, lean weekly surplus, post-haircut maximum installment and amount, uncapped cashflow-based principal ceiling, final policy maximum, request and proposal, ticket-ceiling binding reason, and decline/unverified reason. The backend returns selected calendar week dates, haircut factor and amount, both principal caps, and ticket ceiling; the browser must not reconstruct underwriting arithmetic. Continue refining the visual sequence to compare requested, proposed, and maximum amounts prominently and label cadence accurately.
 
 **Acceptance:** For a known seeded shop, the highlighted lean period matches the policy's selected window; the displayed maximum installment and principal match the decision payload; a negative or absent surplus never appears as positive capacity.
 
 ### 4.2 Trust and provenance board
 
-Each rail row shows type, trust class, provenance, coverage dates, last updated date, identity-match state, and whether it may affect the limit. Distinguish **simulated verified rail** from **unverified upload** in text, not color alone. Add a reconciliation view for GST versus UPI/bank, with amounts, difference, period, and threshold if the policy uses one. Explain that a mismatch is a review flag, not proof of fraud.
+The current prototype shows type, trust class, provenance, added date, and identity-match state, plus a GST/UPI amount comparison and gap. Add coverage dates, freshness, eligibility effect, and any policy threshold. Explain that a mismatch is a review flag, not proof of fraud.
 
 For zero verified rails, show **UNVERIFIED — no full limit** and the specific next evidence needed. A PDF may be available for context but must never be styled as a verified operational rail or counted toward a full limit. Unknown freshness or identity state is shown as unknown, never assumed passed.
 
@@ -103,11 +105,11 @@ Fairness twins should show the two matched inputs, the changed protected attribu
 ## 5. Lender actions and audit
 
 - **Run assessment:** allowed after application submission; show progress and recoverable failure. The current input revision must be sent and a stale-revision error must prompt refresh.
-- **Request evidence:** require a reason and specify missing rail or mismatch. Record who requested it and when; surface an awaiting-evidence state. The current endpoint stores an override, but the application UI does not expose an effective state or request lifecycle.
+- **Request evidence:** require a reason and specify missing rail or mismatch. The owner application detail shows the evidence type/reason and can submit a listed synthetic account for review on that same application. Bank review returns a verified case to lender assessment and keeps a failed case awaiting evidence. Add notification and response workflows for the other requested evidence types; preserve explicit reassessment after the evidence revision changes.
 - **Reduce terms:** expose the existing API action with proposed principal no greater than policy capacity, plus a reason. Show old and new terms. Never permit the UI to increase a principal past the policy maximum.
-- **Decline:** require a reason and a clear confirmation of the effective action. A model verdict is a recommendation; show the lender's final recorded action separately.
+- **Decline:** require a reason and confirm before recording; the UI now asks for confirmation. A model verdict is a recommendation; show the lender's final recorded action separately.
 - **Audit view:** replace raw JSON with a chronological timeline of assessment, evidence changes, scenarios if intentionally logged, and overrides. Each entry shows actor, time, action, reason, input revision, policy/model version, and audit reference. Preserve raw JSON only as an optional technical detail.
-- **Report:** render a readable report with provenance, key evidence, capacity math, proposed terms, lender action, and limitations. A report generated before a later override must not appear to be the current final state.
+- **Report:** the readable/printable report now includes uncapped cashflow ceiling, policy ticket ceiling, haircut and post-haircut capacity in addition to provenance, evidence, terms, and limitations. A report generated before a later override must not appear to be the current final state.
 
 **Acceptance:** Refreshing a case preserves the effective action; the latest lender action is distinguishable from the original score; every override links to an audit entry.
 
@@ -135,7 +137,7 @@ Use the existing `/api/applications`, `/:id`, `/:id/score`, `/:id/stress`, `/:id
 3. **Application/workflow:** latest effective override or action, action time, and evidence-request status; keep scored verdict separate.
 4. **Portfolio:** shop display name and last-assessed time in queue summaries; counts with denominators and provenance.
 
-Build in this order: **P0** cashflow/capacity explanation, provenance, offer comparison, and effective state; then **P1** queue triage, stress comparison, readable audit/report, and fairness/evidence views. Validate each view against the seeded clean, PDF-only, mule-like, GST-gap, and fairness-twin cases. The acceptance checks above are the feature checks; avoid duplicating policy calculations in frontend tests.
+Build in this order: **P0 remaining** missing-week/axis clarity, capacity explanation, offer comparison, rail coverage/freshness, and evidence-request lifecycle; then **P1** queue sort/urgency, pipeline interactions, confirmation and old/new action comparisons, report freshness, audit provenance, and robust fairness/evidence evaluation. Validate each view against seeded clean, PDF-only, mule-like, GST-gap, and fairness-twin cases. The acceptance checks above are the feature checks; keep underwriting arithmetic in the scoring service.
 
 ## Sources checked
 

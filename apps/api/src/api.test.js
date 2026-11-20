@@ -120,3 +120,28 @@ test("login isolation 404", async () => {
   const r = await send("GET", "/api/evidence/summary");
   assert.equal(r.status, 403);
 });
+
+test("bank admin confirms only matching synthetic bank records", async () => {
+  const owner = await login("owner@demo");
+  const shop = await owner("POST", "/api/shops", { name: "Lakshmi Stores", business_type: "Kirana", identity: { city: "Bengaluru" } });
+  assert.equal(shop.status, 201);
+  const appn = await owner("POST", "/api/applications", { shop_id: shop.json.data._id, requested_amount_paise: 1000000 }, { "Idempotency-Key": "bank-app-1" });
+  const pending = await owner("POST", `/api/applications/${appn.json.data._id}/verification-requests`, { public_ref: "DEMO-ACCT-001" }, { "Idempotency-Key": "bank-request-1" });
+  assert.equal(pending.status, 201);
+  assert.equal(pending.json.data.status, "pending");
+  const ownerCannotSeeBank = await owner("GET", `/api/bank/verification-requests/${pending.json.data.id}`);
+  assert.equal(ownerCannotSeeBank.status, 403);
+  const bank = await login("bank@demo");
+  const review = await bank("GET", `/api/bank/verification-requests/${pending.json.data.id}`);
+  assert.equal(review.status, 200);
+  assert.equal(review.json.data.recommendation, "verified_simulated");
+  const confirmed = await bank("POST", `/api/bank/verification-requests/${pending.json.data.id}/decision`, { action: "confirm" }, { "Idempotency-Key": "bank-review-1" });
+  assert.equal(confirmed.status, 200);
+  assert.equal(confirmed.json.data.status, "verified_simulated");
+
+  const mismatchShop = await owner("POST", "/api/shops", { name: "Lakshmi Stores", business_type: "Kirana", identity: {} });
+  const mismatchApp = await owner("POST", "/api/applications", { shop_id: mismatchShop.json.data._id, requested_amount_paise: 1000000 }, { "Idempotency-Key": "bank-app-2" });
+  const mismatchReq = await owner("POST", `/api/applications/${mismatchApp.json.data._id}/verification-requests`, { public_ref: "DEMO-ACCT-002" }, { "Idempotency-Key": "bank-request-2" });
+  const mismatchConfirm = await bank("POST", `/api/bank/verification-requests/${mismatchReq.json.data.id}/decision`, { action: "confirm" }, { "Idempotency-Key": "bank-review-2" });
+  assert.equal(mismatchConfirm.status, 422);
+});

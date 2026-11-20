@@ -117,6 +117,14 @@
 .owner-workspace-sidebar a:hover,.owner-workspace-sidebar a.active { background:white; color:var(--ink); }
 .owner-workspace-sidebar p { border-top:1px solid var(--line); margin:15px 12px 0; padding-top:16px; color:var(--ink-2); font-size:11px; }
 .owner-workspace-main { min-width:0; }
+.owner-evidence-request { margin:20px 0; padding:16px; border:1px solid var(--line); border-radius:12px; background:var(--lilac-2); }
+.owner-evidence-request h3 { margin:0 0 8px; font-size:16px; }
+.owner-evidence-request p { margin:6px 0; }
+.owner-evidence-request small { color:var(--ink-2); }
+.owner-evidence-response { display:grid; gap:10px; margin-top:16px; padding-top:14px; border-top:1px solid var(--line); }
+.owner-evidence-response label { display:grid; gap:7px; font-size:12px; }
+.owner-evidence-response select { min-height:42px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:white; }
+.owner-evidence-response p { margin:0; color:var(--ink-2); font-size:12px; }
 .owner-workspace-main .owner-hero,.owner-workspace-main .owner-track-head { margin-top:0; }
 .owner-workspace-main .page-title { font-size:clamp(34px,4vw,50px); }
 .owner-sidebar-list { border-top:1px solid var(--line); margin:32px 0; padding-top:22px; display:grid; gap:8px; }

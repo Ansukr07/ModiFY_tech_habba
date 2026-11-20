@@ -306,7 +306,7 @@ export function createApp(db) {
     if (idem.missing) return sendError(res, 400, "IDEMPOTENCY_REQUIRED", "Idempotency-Key required");
     const verification = { _id: crypto.randomUUID(), application_id: appn._id, shop_id: appn.shopId, owner_id: req.session.userId, account_id: account._id, status: "pending", createdAt: new Date().toISOString(), evidence_revision: (appn.evidence_revision || 0) + 1, result: null };
     await db.verification_requests.insertOne(verification);
-    await db.applications.updateOne({ _id: appn._id }, { $set: { current_verification_id: verification._id, evidence_revision: verification.evidence_revision, input_revision: (appn.input_revision || 1) + 1 } });
+    await db.applications.updateOne({ _id: appn._id }, { $set: { current_verification_id: verification._id, evidence_revision: verification.evidence_revision, input_revision: (appn.input_revision || 1) + 1, status: "awaiting_verification" } });
     const response = { data: { id: verification._id, status: verification.status, application_id: appn._id, evidence_revision: verification.evidence_revision } };
     await audit(req.session.userId, "verification_requested", "applications/" + appn._id, { verification_id: verification._id, account_ref: account.public_ref }, true, { request_id: req.id, verification_id: verification._id });
     await saveIdem(req, idem.key, "verification:" + appn._id, bodyHash, 201, response);
@@ -334,6 +334,10 @@ export function createApp(db) {
   app.post("/api/bank/verification-requests/:id/decision", requireSession, requireRole("bank_admin"), async (req, res) => {
     const v = await one(db.verification_requests, { _id: req.params.id });
     if (!v) return sendError(res, 404, "NOT_FOUND", "Not found");
+    const bodyHash = hashJson(req.body || {});
+    const idem = await idempotent(req, res, "bank-review:" + v._id, bodyHash);
+    if (idem.done) return;
+    if (idem.missing) return sendError(res, 400, "IDEMPOTENCY_REQUIRED", "Idempotency-Key required");
     if (v.status !== "pending") return sendError(res, 409, "ALREADY_REVIEWED", "This request has already been reviewed");
     const action = req.body?.action;
     if (!["confirm", "reject"].includes(action)) return sendError(res, 422, "VALIDATION", "Choose confirm or reject");
@@ -345,8 +349,10 @@ export function createApp(db) {
     const result = { outcome: status, checks: checked.checks, covered_from: checked.covered_from, covered_to: checked.covered_to, transaction_count: checked.transaction_count, total_credit_paise: checked.total_credit_paise, total_debit_paise: checked.total_debit_paise, source_hash: checked.source_hash, fixture_version: account.fixture_version, reviewed_by: req.session.userId, reviewed_at: new Date().toISOString(), reason: action === "reject" ? String(req.body.reason).trim() : "All required checks passed", provenance: "synthetic" };
     result.audit_reference = await audit(req.session.userId, "verification_reviewed", "applications/" + application._id, { verification_id: v._id, status, source_hash: checked.source_hash }, true, { request_id: req.id, verification_id: v._id });
     await db.verification_requests.updateOne({ _id: v._id }, { $set: { status, result } });
-    await db.applications.updateOne({ _id: application._id }, { $set: { evidence_revision: (application.evidence_revision || 0) + 1, input_revision: (application.input_revision || 1) + 1 } });
-    sendData(res, { id: v._id, status, result });
+    await db.applications.updateOne({ _id: application._id }, { $set: { evidence_revision: (application.evidence_revision || 0) + 1, input_revision: (application.input_revision || 1) + 1, status: status === "verified_simulated" ? "submitted" : "awaiting_evidence" } });
+    const response = { data: { id: v._id, status, result } };
+    await saveIdem(req, idem.key, "bank-review:" + v._id, bodyHash, 200, response);
+    res.json(response);
   });
 
   app.get("/api/applications", requireSession, async (req, res) => {
@@ -357,12 +363,12 @@ export function createApp(db) {
     let items = await list(db.applications, q);
     const limit = Math.min(Number(req.query.limit) || 50, 100);
     const summaries = await Promise.all(items.map(async (a) => {
-      const rails = await list(db.rails, { shopId: a.shopId });
-      const dec = a.latest_decision_id ? await one(db.decisions, { _id: a.latest_decision_id }) : null;
       const shop = await one(db.shops, { _id: a.shopId });
+      const evidence = await evidenceFor(a, shop);
+      const dec = a.latest_decision_id ? await one(db.decisions, { _id: a.latest_decision_id }) : null;
       const actions = await list(db.overrides, { applicationId: a._id });
       const latest = actions.filter((x) => x.decisionId === dec?._id).sort((x, y) => y.createdAt.localeCompare(x.createdAt))[0];
-      return { ...a, shop_name: shop?.name || a.shopId, business_type: shop?.business_type || shop?.category || null, verified_rail_count: verifiedCount(rails), latest_verdict: dec?.verdict || null, assessed_at: dec?.assessed_at || null, review_reason: latest?.action === "request_evidence" ? latest.reason : dec?.not_run_reason || dec?.drivers?.[0]?.text || dec?.drivers?.[0]?.feature || null, effective_action: latest?.action || null, effective_verdict: latest?.effective?.verdict || dec?.verdict || null };
+      return { ...a, shop_name: shop?.name || a.shopId, business_type: shop?.business_type || shop?.category || null, verified_rail_count: verifiedCount(evidence.rails), verification_status: evidence.verification?.status || "legacy_demo", latest_verdict: dec?.verdict || null, assessed_at: dec?.assessed_at || null, updated_at: latest?.createdAt || dec?.assessed_at || a.createdAt, review_reason: latest?.action === "request_evidence" ? latest.reason : dec?.not_run_reason || dec?.drivers?.[0]?.text || dec?.drivers?.[0]?.feature || null, effective_action: latest?.action || null, effective_verdict: latest?.effective?.verdict || dec?.verdict || null };
     }));
     summaries.sort((a, b) => (a.latest_verdict ? 1 : 0) - (b.latest_verdict ? 1 : 0) || String(a.createdAt).localeCompare(String(b.createdAt)));
     const withSummary = req.query.verdict
@@ -391,13 +397,16 @@ export function createApp(db) {
     if (b.err) return sendError(res, b.err[0], b.err[1], b.err[2]);
     const { ownerFlags, ...safeShop } = b.shop;
     const ownerView = req.session.role === "owner";
+    const verification = await currentVerification(b.appn);
+    const verifiedEvidence = verification?.status === "verified_simulated" ? await evidenceFor(b.appn, b.shop) : null;
     const gstSales = b.rails.filter((r) => r.type === "gst" && TRUST_VERIFIED.has(r.trustClass)).reduce((sum, r) => sum + Number(r.payload?.taxable_sales_paise || 0), 0);
     const upiCredits = b.cashflows.filter((r) => !r.source_rail || String(r.source_rail).includes("upi")).reduce((sum, r) => sum + Number(r.inflow_paise ?? r.inflowPaise ?? 0), 0);
     sendData(res, {
       application: b.appn,
       shop: safeShop,
-      rails: b.rails.map((r) => ({ type: r.type, trustClass: r.trustClass, provenance: r.provenance, identity_match: r.identity_match, createdAt: r.createdAt, coverage_from: r.coverage_from || null, coverage_to: r.coverage_to || null })),
-      cashflows: ownerView ? undefined : b.cashflows,
+      rails: verifiedEvidence ? verifiedEvidence.rails : b.rails.map((r) => ({ type: r.type, trustClass: r.trustClass, provenance: r.provenance, identity_match: r.identity_match, createdAt: r.createdAt, coverage_from: r.coverage_from || null, coverage_to: r.coverage_to || null })),
+      cashflows: ownerView ? undefined : verifiedEvidence ? verifiedEvidence.cashflows : b.cashflows,
+      verification: verification ? { id: verification._id, status: verification.status, result: verification.result } : { status: "not_requested" },
       decision: b.decision,
       latest_action: b.latestAction,
       reconciliation: ownerView || !gstSales ? null : { gst_sales_paise: gstSales, upi_credits_paise: upiCredits, relative_gap: Math.abs(gstSales - upiCredits) / gstSales, period_note: "Synthetic demo totals; GST period alignment is not verified" },
@@ -413,13 +422,14 @@ export function createApp(db) {
     if (idemp.missing) return sendError(res, 400, "IDEMPOTENCY_REQUIRED", "Idempotency-Key required");
     const b = await loadApplicationBundle(req, req.params.id);
     if (b.err) return sendError(res, b.err[0], b.err[1], b.err[2]);
-    if (req.body?.expected_input_revision != null && req.body.expected_input_revision !== (b.shop.input_revision || 1)) {
+    const evidence = await evidenceFor(b.appn, b.shop);
+    if (req.body?.expected_input_revision != null && req.body.expected_input_revision !== (b.appn.input_revision || 1)) {
       return sendError(res, 409, "STALE_REVISION", "Evidence changed; refresh then score");
     }
     await db.applications.updateOne({ _id: b.appn._id }, { $set: { status: "assessing" } });
     let scored;
     try {
-      scored = await postScore("/internal/agent", scorePayload(b.shop, b.rails, b.cashflows, b.appn._id, b.appn.requested_amount_paise));
+      scored = await postScore("/internal/agent", scorePayload(b.shop, evidence.rails, evidence.cashflows, b.appn._id, b.appn.requested_amount_paise));
     } catch (e) {
       await db.applications.updateOne({ _id: b.appn._id }, { $set: { status: "failed" } });
       await audit(req.session.userId, "score", `applications/${b.appn._id}`, req.body || {}, false, {
@@ -430,7 +440,7 @@ export function createApp(db) {
         retryable: true,
       });
     }
-    if (verifiedCount(b.rails) === 0) {
+    if (evidence.verification && evidence.verification.status !== "verified_simulated" || verifiedCount(evidence.rails) === 0) {
       scored.verdict = "UNVERIFIED";
       scored.principal_paise = 0;
       scored.rate_bps = 0;
@@ -445,7 +455,9 @@ export function createApp(db) {
       scenarioOnly: false,
       createdAt: new Date().toISOString(),
       assessed_at: new Date().toISOString(),
-      input_revision: b.shop.input_revision || 1,
+      verification_id: evidence.verification?._id || null,
+      evidence_revision: b.appn.evidence_revision || 0,
+      input_revision: b.appn.input_revision || 1,
       baselineVerdict: "DECLINE",
       ...scored,
     };
@@ -458,7 +470,7 @@ export function createApp(db) {
     await db.decisions.insertOne(decision);
     await db.applications.updateOne(
       { _id: b.appn._id },
-      { $set: { status: "assessed", latest_decision_id: decision._id, input_revision: b.shop.input_revision || 1 } }
+      { $set: { status: "assessed", latest_decision_id: decision._id } }
     );
     const payload = { data: decision };
     await saveIdem(req, idemp.key, `score:${req.params.id}`, bodyHash, 200, payload);
@@ -469,10 +481,12 @@ export function createApp(db) {
     const b = await loadApplicationBundle(req, req.params.id);
     if (b.err) return sendError(res, b.err[0], b.err[1], b.err[2]);
     if (!b.decision) return sendError(res, 422, "NO_DECISION", "Score first");
+    if (b.decision.input_revision !== (b.appn.input_revision || 1)) return sendError(res, 409, "STALE_REVISION", "Evidence changed; reassess before testing stress");
+    const evidence = await evidenceFor(b.appn, b.shop);
     let scored;
     try {
       scored = await postScore("/stress-test", {
-        ...scorePayload(b.shop, b.rails, b.cashflows, b.appn._id, b.appn.requested_amount_paise),
+        ...scorePayload(b.shop, evidence.rails, evidence.cashflows, b.appn._id, b.appn.requested_amount_paise),
         lean_inflow_delta_pct: Number(req.body?.lean_inflow_delta_pct ?? 0),
         outflow_delta_pct: Number(req.body?.outflow_delta_pct ?? 0),
         base_decision_id: b.decision._id,

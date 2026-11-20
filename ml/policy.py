@@ -190,8 +190,8 @@ def underwrite(features: dict, rails: list[dict], requested: int, identity_ok: b
     if cadence == "weekly":
         periods = int(tenure_mo * 52 / 12)
     rate = RATE_BPS[rband]
-    max_prin = pv_principal(max_pay, periods, rate, cadence)
-    max_prin = min(max_prin, TICKET_CEILING_PAISE)
+    affordability_principal = pv_principal(max_pay, periods, rate, cadence)
+    max_prin = min(affordability_principal, TICKET_CEILING_PAISE)
     principal = min(requested, max_prin)
     counter = requested > max_prin
     if principal <= 0:
@@ -229,6 +229,7 @@ def underwrite(features: dict, rails: list[dict], requested: int, identity_ok: b
         periods=periods,
         rate=rate,
         max_principal=max_prin,
+        affordability_principal=affordability_principal,
     )
 
 
@@ -284,11 +285,15 @@ def pack(**k):
             "worst_4_week_net_paise": k["worst"],
             "worst_4_week_start": k["features"].get("worst_4_week_start"),
             "worst_4_week_end": k["features"].get("worst_4_week_end"),
+            "worst_4_week_dates": k["features"].get("worst_4_week_dates", []),
             "lean_surplus_paise": k["lean_weekly"],
             "period": "week",
             "haircut": k["haircut"],
+            "post_haircut_max_emi_paise": k["max_pay"],
             "max_emi_paise": k["max_pay"],
             "max_principal_paise": k.get("max_principal", 0),
+            "cashflow_max_principal_paise": k.get("affordability_principal", k.get("max_principal", 0)),
+            "ticket_ceiling_paise": TICKET_CEILING_PAISE,
         },
         "reference_emi_paise": REF_EMI_WEEKLY_PAISE,
         "target_definition": "next_synthetic_lean_period_reference_emi_coverage",

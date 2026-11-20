@@ -89,7 +89,13 @@ def build_features(shop: dict, rails: list[dict], cashflows: list[dict]) -> dict
         inflow_weeks[w] += int(row.get("inflow_paise") or 0)
         outflow_weeks[w] += int(row.get("outflow_paise") or 0)
 
-    ordered = sorted(set(inflow_weeks) | set(outflow_weeks))
+    observed = sorted(set(inflow_weeks) | set(outflow_weeks))
+    ordered = []
+    if observed:
+        week = observed[0]
+        while week <= observed[-1]:
+            ordered.append(week)
+            week += timedelta(weeks=1)
     weekly_in = [inflow_weeks[w] for w in ordered]
     history_weeks = len(ordered)
 
@@ -110,6 +116,7 @@ def build_features(shop: dict, rails: list[dict], cashflows: list[dict]) -> dict
     rolls = rolling_4(nets)
     typical = sorted(rolls)[len(rolls) // 2] if rolls else 0
     worst = min(rolls) if rolls else (nets[0][1] if nets else 0)
+    worst_index = rolls.index(worst) if rolls else 0
     lean_month_ratio = (worst / typical) if typical else None
 
     monthly = []
@@ -156,8 +163,9 @@ def build_features(shop: dict, rails: list[dict], cashflows: list[dict]) -> dict
         "invoice_count": sum(1 for r in rails if r.get("type") == "gst"),
         "weeks_on_vpa": history_weeks,
         "worst_4_week_net_paise": worst,
-        "worst_4_week_start": (nets[rolls.index(worst)][0].date().isoformat() if rolls and len(nets) >= 4 else (nets[0][0].date().isoformat() if nets else None)),
-        "worst_4_week_end": ((nets[rolls.index(worst) + 3][0] + timedelta(days=6)).date().isoformat() if rolls and len(nets) >= 4 else (nets[0][0] + timedelta(days=6)).date().isoformat() if nets else None),
+        "worst_4_week_start": (nets[worst_index][0].date().isoformat() if nets else None),
+        "worst_4_week_end": ((nets[min(worst_index + 3, len(nets) - 1)][0] + timedelta(days=6)).date().isoformat() if nets else None),
+        "worst_4_week_dates": [nets[i][0].date().isoformat() for i in range(worst_index, min(worst_index + 4, len(nets)))] if nets else [],
         "typical_4_week_net_paise": typical,
         "weekly_inflows": weekly_in,
     }
