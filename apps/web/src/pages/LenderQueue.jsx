@@ -3,6 +3,7 @@ import { Shell } from "../components/Shell.jsx";
 import { SHOPS, paiseToInr, verdictLabel } from "../data/seed.js";
 
 export function LenderQueue() {
+  const examples = SHOPS.filter((s) => !s.id.startsWith("twin"));
   return (
     <Shell role="lender">
       <div className="page">
@@ -11,9 +12,9 @@ export function LenderQueue() {
           <span className="pill outline">No bureau file on any row</span>
         </div>
         <h1 className="page-title">Thin-file queue</h1>
-        <p className="muted">Four fixed synthetic assessments. Open a shop to inspect its sample terms and evidence.</p>
+        <p className="muted">{examples.length} fixed synthetic assessments. Open a shop to inspect its sample terms and evidence.</p>
         <div className="queue">
-          {SHOPS.filter((s) => !s.id.startsWith("twin")).map((s) => (
+          {examples.map((s) => (
             <Link key={s.id} className="q-row" to={`/application/${s.id}`}>
               <div>
                 <strong>{s.name}</strong>
