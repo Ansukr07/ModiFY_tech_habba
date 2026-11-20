@@ -425,4 +425,36 @@
   .nav-mid {
     display: none;
   }
+
+  .float-row {
+    max-width: 540px;
+    margin: 64px auto 0;
+  }
+
+  .phone {
+    order: -1;
+  }
+}
+
+@media (max-width: 600px) {
+  .topnav {
+    padding: 16px;
+  }
+
+  .gate {
+    margin-top: 64px;
+    padding: 0 16px;
+  }
+
+  .page {
+    padding: 8px 16px 64px;
+  }
+
+  .role-chip {
+    display: none;
+  }
+
+  .phone {
+    min-height: 360px;
+  }
 }
