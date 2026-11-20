@@ -1,0 +1,10 @@
+{
+  "feature_schema_version": "1.0",
+  "generator_version": "v1",
+  "auth_model_version": "heuristic-v0",
+  "stress_model_version": "heuristic-v0",
+  "training_seed": 42,
+  "auth_thresholds": { "low_below": 0.4, "high_at_or_above": 0.75 },
+  "stress_thresholds": { "low_max": 0.2, "medium_max": 0.45 },
+  "note": "heuristic-v0 until joblib artifacts exist; not trained on request"
+}
