@@ -173,3 +173,5 @@ Import `apps/web/src/styles/tokens.css` (mirrors this file). Pitch decks copy he
 ## Reference-specific implementation notes
 
 The reference's strongest move is generous white space around one large serif promise, followed by a central device and two offset data widgets. Apply that composition to the ZeroCIBIL entry screen; keep the lender desk denser and task focused. The blue/yellow stickers annotate verified rails and unverified uploads, never imply live integrations. Replace the reference's unsupported rating, partner logos, user count, returns claim, and download action with truthful synthetic product examples and working owner/lender routes.
+
+For the landing page, follow the image's grey outer frame, white inset canvas, centred two-line serif headline, paired pill actions, curved pale backdrop, large phone, offset activity widgets, source-name band, and spacious editorial feature section. On narrow screens the phone leads and the widgets stack below it. Keep actual ZeroCIBIL routes and synthetic provenance labels visible.
