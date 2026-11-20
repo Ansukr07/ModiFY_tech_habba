@@ -3,7 +3,7 @@
 **Status:** Implementation plan, not a claim that these features are already connected.
 **Authority:** [spec.md](spec.md) defines product and underwriting; [design.md](design.md) defines visual design. API contracts are in [backend.md](backend.md). If these plans conflict with either source, the source wins.
 
-**Current frontend state:** The React app is a navigable synthetic fixture demo. `/apply` offers fixed sample shops; it does not save owner data or submit applications. The API-backed application flow, scoring, and scenario calculations below remain implementation requirements once the backend exists.
+**Current frontend state:** The React app has a landing → workspace entry → owner draft or lender queue flow. Workspace selection is stored only in the browser and is not authentication. Owner details are saved as a local draft; application submission and account sessions await the backend. The lender queue and assessment still use explicitly synthetic fixtures. `/status/:id` and `/evidence` have been removed from the current navigation; their API-backed capabilities remain future requirements below.
 The seed charts contain 6–12 weekly samples; the future 90-day board requires daily source records from the backend.
 
 ## 1. Purpose and boundaries

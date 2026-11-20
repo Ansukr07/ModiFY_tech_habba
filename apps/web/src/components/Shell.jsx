@@ -16,23 +16,23 @@ export function Shell({ role, children }) {
         {role === "lender" && (
           <nav className="nav-mid" aria-label="Lender">
             <NavLink to="/queue">Queue</NavLink>
-            <NavLink to="/evidence">Evidence</NavLink>
+
           </nav>
         )}
         {role === "owner" && (
           <nav className="nav-mid" aria-label="Owner">
             <NavLink to="/apply">Apply</NavLink>
-            <NavLink to="/status/clean-kirana">Status</NavLink>
+
           </nav>
         )}
         <div className="nav-end">
-          <span className="role-chip">{role === "lender" ? "Lender demo" : "Owner demo"}</span>
+          <span className="role-chip">{role === "lender" ? "Lender workspace" : "Owner workspace"}</span>
           <button
             type="button"
             className="btn btn-primary"
-            onClick={() => navigate("/")}
+            onClick={() => { sessionStorage.removeItem("zerocibil-role"); navigate("/login"); }}
           >
-            Switch role
+            Sign out
             <span aria-hidden="true"> →</span>
           </button>
         </div>

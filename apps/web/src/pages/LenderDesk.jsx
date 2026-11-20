@@ -39,14 +39,14 @@ export function LenderDesk() {
         <header className="dashboard-topbar">
           <Link to="/" className="dashboard-logo" aria-label="ZeroCIBIL home"><span><Mark size={20}/></span> ZeroCIBIL</Link>
           <span className="dashboard-workspace">Lender workspace <span>·</span> Synthetic demo</span>
-          <div className="dashboard-top-actions"><Link to="/queue">All applications</Link><Link to="/evidence">Evidence</Link><Link className="dashboard-home" to="/">Switch role →</Link></div>
+          <div className="dashboard-top-actions"><Link to="/queue">All applications</Link><Link className="dashboard-home" to="/login" onClick={() => sessionStorage.removeItem("zerocibil-role")}>Sign out →</Link></div>
         </header>
 
         <aside className="dashboard-sidebar" aria-label="Lender navigation">
           <p>GENERAL</p>
           <Link className="dashboard-sidebar-active" to={`/application/${shop.id}`}><SideIcon kind="dashboard" /> Dashboard</Link>
           <Link to="/queue"><SideIcon kind="queue" /> Application queue</Link>
-          <Link to="/evidence"><SideIcon kind="evidence" /> Evidence</Link>
+
           <p>SEED APPLICATIONS</p>
           {examples.map((example) => <Link key={example.id} className={`dashboard-seed-link ${example.id === shop.id ? "dashboard-current-shop" : ""}`} to={`/application/${example.id}`}>{example.name}</Link>)}
         </aside>

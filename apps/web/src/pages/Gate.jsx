@@ -20,11 +20,11 @@ export function Gate() {
           <Link className="landing-brand" to="/" aria-label="ZeroCIBIL home"><Mark size={32} /><span>ZeroCIBIL</span></Link>
           <nav aria-label="Primary">
             <a href="#features">Features</a>
-            <Link to="/apply">For owners</Link>
-            <Link to="/queue">For lenders</Link>
-            <Link to="/evidence">Evidence</Link>
+            <Link to="/login">For owners</Link>
+            <Link to="/login?role=lender">For lenders</Link>
+
           </nav>
-          <Link className="landing-button landing-button-dark landing-nav-cta" to="/apply">Get started <Arrow /></Link>
+          <Link className="landing-button landing-button-dark landing-nav-cta" to="/login">Get started <Arrow /></Link>
         </header>
 
         <main>
@@ -33,8 +33,8 @@ export function Gate() {
             <h1 id="landing-title">Empowering your<br />financial future</h1>
             <p className="landing-subtitle">Credit terms shaped by your shop’s verified operations, even without a bureau file.</p>
             <div className="landing-actions">
-              <Link className="landing-button landing-button-dark" to="/apply">Explore as owner <Arrow /></Link>
-              <Link className="landing-button landing-button-light" to="/queue">Open lender desk <Arrow /></Link>
+              <Link className="landing-button landing-button-dark" to="/login">Explore as owner <Arrow /></Link>
+              <Link className="landing-button landing-button-light" to="/login?role=lender">Open lender desk <Arrow /></Link>
             </div>
 
             <div className="landing-stage" aria-label="Synthetic ZeroCIBIL product preview">
