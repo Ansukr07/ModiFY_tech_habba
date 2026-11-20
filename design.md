@@ -169,3 +169,7 @@ Calm, specific, Indian English. “No bureau file.” “Unverified upload — d
 Import `apps/web/src/styles/tokens.css` (mirrors this file). Pitch decks copy hex and type only. Backend emails: paper, ink, Sora.
 
 **Source image:** `ui inspo.jpg`
+
+## Reference-specific implementation notes
+
+The reference's strongest move is generous white space around one large serif promise, followed by a central device and two offset data widgets. Apply that composition to the ZeroCIBIL entry screen; keep the lender desk denser and task focused. The blue/yellow stickers annotate verified rails and unverified uploads, never imply live integrations. Replace the reference's unsupported rating, partner logos, user count, returns claim, and download action with truthful synthetic product examples and working owner/lender routes.

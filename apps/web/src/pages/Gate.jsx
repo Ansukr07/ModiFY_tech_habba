@@ -21,11 +21,11 @@ export function Gate() {
       </header>
 
       <section className="gate">
-        <p className="stars">Hackathon demo · synthetic data</p>
-        <h1>Credit for shops banks cannot see</h1>
+        <p className="stars">Synthetic demo data · Built for credit-invisible shops</p>
+        <h1>Good business deserves to be seen.</h1>
         <p className="lede">
-          No CIBIL, no collateral theatre. ZeroCIBIL prices a kirana from verified operations
-          — how much, how long, at what rate.
+          No bureau file? Show the business behind the number. ZeroCIBIL uses verified operations
+          to propose an amount, a term, and a repayment plan.
         </p>
         <div className="cta-row">
           <button type="button" className="btn btn-primary" onClick={() => navigate("/apply")}>
@@ -41,8 +41,8 @@ export function Gate() {
           <div>
             <span className="sticker blue">Verified rails</span>
             <div className="widget" style={{ marginTop: 12 }}>
-              <div className="stat-num">99.9%</div>
-              <p className="muted">Synthetic shops labelled for the demo</p>
+              <div className="stat-num">90 days</div>
+              <p className="muted">of shop activity in this synthetic example</p>
               <div className="bars" aria-hidden="true">
                 {[40, 70, 55, 90, 60, 75, 48].map((h, i) => (
                   <span key={i} style={{ height: `${h}%` }} />

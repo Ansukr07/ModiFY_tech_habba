@@ -144,3 +144,7 @@ Acceptance:
 ## 9. Policy decisions builders must not invent
 
 The source leaves the max ticket (₹50k–₹3 lakh range), exact haircut table, numeric annual rates, history cutoffs, tiny test-limit exception, and step-up conditions unresolved. Weekly is the demo default; monthly requires consistent policy periods. Read approved values from versioned backend policy. Until defined, use UNVERIFIED with no offer for zero verified rails and do not fabricate rates, tickets, or step-up promises.
+
+## 10. Reference-image entry screen
+
+Use `ui inspo.jpg` as a composition reference: a spacious centred Source Serif 4 promise, a short operational explanation, black and outline pill actions, then a central device mockup flanked by two offset evidence widgets. Keep the product's existing 2×2 mark and paper/ink/lilac palette. The device shows an explicitly synthetic ZeroCIBIL lean-month and offer example; side widgets explain verified rails and the PDF limitation. The reference's rating, partner logos, return percentage, and app download are not product facts and must not appear. On narrow screens the device and widgets stack in reading order, and the two entry actions remain visible before the illustration.
