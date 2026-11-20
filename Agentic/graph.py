@@ -1,0 +1,102 @@
+"""Connect the underwriting steps into a LangGraph workflow."""
+
+from typing import Any
+
+from langgraph.graph import END, START, StateGraph
+
+from zerocibil.agents.authenticity import investigate
+from zerocibil.agents.document_intake import document_intake
+from zerocibil.agents.explainability import explain
+from zerocibil.agents.failure import fail_closed
+from zerocibil.agents.financial_analyst import analyze
+from zerocibil.agents.orchestrator import route_after_validate, validate
+from zerocibil.agents.policy_terms import apply_policy
+from zerocibil.agents.stress import analyze_stress
+from zerocibil.config import DEFAULT_POLICY
+from zerocibil.state import UnderwritingState
+
+
+def normalize_node(state: dict[str, Any]) -> dict[str, Any]:
+    try:
+        return analyze(state, DEFAULT_POLICY)
+    except (KeyError, TypeError, ValueError, OverflowError) as exc:
+        return {
+            "status": "DATA_QUALITY_FAILED",
+            "errors": [
+                {"code": "NORMALIZATION_FAILED", "message": str(exc)}
+            ],
+        }
+
+
+def authenticity_node(state: dict[str, Any]) -> dict[str, Any]:
+    return investigate(state, DEFAULT_POLICY)
+
+
+def stress_node(state: dict[str, Any]) -> dict[str, Any]:
+    return analyze_stress(state, DEFAULT_POLICY)
+
+
+def route_after_authenticity(state: dict) -> str:
+    if state.get("status") == "FAILED_CLOSED":
+        return "fail_closed"
+    return "stress" if state.get("auth_gate") == "PASS" else "explain"
+
+
+def route_after_normalize(state: dict) -> str:
+    if state.get("status") == "DATA_QUALITY_FAILED":
+        return "fail_closed"
+    return "authenticity"
+
+
+def route_after_stress(state: dict) -> str:
+    if state.get("status") == "FAILED_CLOSED":
+        return "fail_closed"
+    return "policy_terms"
+
+
+def build_graph(checkpointer: Any = None):
+    graph = StateGraph(UnderwritingState)
+    graph.add_node("validate", validate)
+    graph.add_node("document_intake", document_intake)
+    graph.add_node("normalize", normalize_node)
+    graph.add_node("authenticity", authenticity_node)
+    graph.add_node("stress", stress_node)
+    graph.add_node("policy_terms", apply_policy)
+    graph.add_node("explain", explain)
+    graph.add_node("fail_closed", fail_closed)
+
+    graph.add_edge(START, "validate")
+    graph.add_conditional_edges(
+        "validate",
+        route_after_validate,
+        {
+            "fail_closed": "fail_closed",
+            "explain": "explain",
+            "document_intake": "document_intake",
+            "normalize": "normalize",
+        },
+    )
+    graph.add_edge("document_intake", "normalize")
+    graph.add_conditional_edges(
+        "normalize",
+        route_after_normalize,
+        {"fail_closed": "fail_closed", "authenticity": "authenticity"},
+    )
+    graph.add_conditional_edges(
+        "authenticity",
+        route_after_authenticity,
+        {
+            "stress": "stress",
+            "explain": "explain",
+            "fail_closed": "fail_closed",
+        },
+    )
+    graph.add_conditional_edges(
+        "stress",
+        route_after_stress,
+        {"fail_closed": "fail_closed", "policy_terms": "policy_terms"},
+    )
+    graph.add_edge("policy_terms", "explain")
+    graph.add_edge("explain", END)
+    graph.add_edge("fail_closed", "explain")
+    return graph.compile(checkpointer=checkpointer)
