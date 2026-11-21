@@ -10,6 +10,7 @@ from pathlib import Path
 import numpy as np
 
 from model_features import AUTH_ORDER, STRESS_FULL_ORDER, STRESS_INFLOW_ORDER, ordered_row
+from zerocibil.observability import traceable
 
 ROOT = Path(__file__).parent
 MODELS = ROOT / "models"
@@ -77,6 +78,7 @@ def _positive_class_score(pipe, imputer, names: list[str], row: list[float]) -> 
     return float(pipe.predict(frame)[0])
 
 
+@traceable(name="ml.model_inference", run_type="tool")
 def score_model(model: str, features: dict, variant: str | None = None) -> tuple[float, str]:
     if model not in {"authenticity", "stress"}:
         raise ScoringError(f"Unknown model: {model}")

@@ -40,6 +40,7 @@ class UnderwritingState(TypedDict):
     terms: NotRequired[dict[str, Any]]
     explanation: NotRequired[dict[str, Any]]
     audit_events: NotRequired[list[dict[str, Any]]]
+    decision_trace: NotRequired[list[dict[str, Any]]]
     human_review: NotRequired[dict[str, Any]]
     owner_language: NotRequired[str]
 

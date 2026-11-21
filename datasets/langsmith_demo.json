@@ -1,0 +1,101 @@
+{
+  "name": "zerocibil-agent-workflow-demo-v1",
+  "description": "Synthetic LangSmith evaluation examples for the ZeroCIBIL LangGraph workflow. No real people, businesses, or financial records.",
+  "examples": [
+    {
+      "name": "no_verified_rails_unverified",
+      "inputs": {
+        "application_id": "demo-no-verified-rails",
+        "schema_version": "1.0",
+        "shop": { "shop_id": "demo-shop-001", "name": "Sample Kirana A" },
+        "rails": [],
+        "cashflows": [],
+        "documents": [],
+        "policy_version": "prototype-0.1"
+      },
+      "expected": { "status": "VALIDATED", "verdict": "UNVERIFIED", "workflow_trace_contains": ["validate", "explain"] }
+    },
+    {
+      "name": "invalid_schema_fail_closed",
+      "inputs": {
+        "application_id": "demo-invalid-schema",
+        "schema_version": "99.0",
+        "shop": { "shop_id": "demo-shop-002", "name": "Sample Tailor B" },
+        "rails": [{ "rail_id": "rail-invalid-1", "rail_type": "aa", "trust_class": "verified_simulated", "provenance": "synthetic" }],
+        "cashflows": [],
+        "documents": [],
+        "policy_version": "prototype-0.1"
+      },
+      "expected": { "status": "FAILED_CLOSED", "error_code": "SCHEMA_MISMATCH", "workflow_trace_contains": ["validate", "fail_closed", "explain"] }
+    },
+    {
+      "name": "owner_document_remains_unverified",
+      "inputs": {
+        "application_id": "demo-owner-document",
+        "schema_version": "1.0",
+        "shop": { "shop_id": "demo-shop-003", "name": "Sample Cafe C" },
+        "rails": [{ "rail_id": "rail-pdf-1", "rail_type": "pdf", "trust_class": "unverified", "provenance": "synthetic" }],
+        "cashflows": [],
+        "documents": [{ "document_id": "doc-owner-1", "filename": "sample_statement.pdf", "issuer": "owner_upload", "media_type": "application/pdf", "pdf_base64": "bm90LWEtcGRm" }],
+        "policy_version": "prototype-0.1"
+      },
+      "expected": { "status": "VALIDATED", "invoice_evidence_trust_class": "unverified", "workflow_trace_contains": ["validate", "document_intake", "normalize"] }
+    },
+    {
+      "name": "verified_clean_history_scored",
+      "inputs": {
+        "application_id": "demo-clean-history",
+        "schema_version": "1.0",
+        "shop": { "shop_id": "demo-shop-004", "name": "Sample Grocery D" },
+        "rails": [{ "rail_id": "rail-aa-1", "rail_type": "aa", "trust_class": "verified_simulated", "provenance": "synthetic" }],
+        "cashflows": [
+          { "t": "2026-05-04", "inflow_paise": 700000, "outflow_paise": 250000, "payer_id": "demo-customer-a", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-05-05", "inflow_paise": 300000, "outflow_paise": 120000, "payer_id": "demo-customer-b", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-05-11", "inflow_paise": 720000, "outflow_paise": 270000, "payer_id": "demo-customer-a", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-05-12", "inflow_paise": 320000, "outflow_paise": 130000, "payer_id": "demo-customer-c", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-05-18", "inflow_paise": 680000, "outflow_paise": 260000, "payer_id": "demo-customer-a", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-05-19", "inflow_paise": 310000, "outflow_paise": 125000, "payer_id": "demo-customer-b", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-05-25", "inflow_paise": 710000, "outflow_paise": 260000, "payer_id": "demo-customer-a", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-05-26", "inflow_paise": 330000, "outflow_paise": 135000, "payer_id": "demo-customer-c", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-06-01", "inflow_paise": 690000, "outflow_paise": 255000, "payer_id": "demo-customer-a", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-06-02", "inflow_paise": 300000, "outflow_paise": 120000, "payer_id": "demo-customer-b", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-06-08", "inflow_paise": 730000, "outflow_paise": 280000, "payer_id": "demo-customer-a", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-06-09", "inflow_paise": 340000, "outflow_paise": 140000, "payer_id": "demo-customer-c", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-06-15", "inflow_paise": 700000, "outflow_paise": 265000, "payer_id": "demo-customer-a", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-06-16", "inflow_paise": 315000, "outflow_paise": 125000, "payer_id": "demo-customer-b", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-06-22", "inflow_paise": 715000, "outflow_paise": 270000, "payer_id": "demo-customer-a", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-06-23", "inflow_paise": 325000, "outflow_paise": 130000, "payer_id": "demo-customer-c", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-06-29", "inflow_paise": 705000, "outflow_paise": 260000, "payer_id": "demo-customer-a", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-06-30", "inflow_paise": 305000, "outflow_paise": 125000, "payer_id": "demo-customer-b", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-07-06", "inflow_paise": 725000, "outflow_paise": 275000, "payer_id": "demo-customer-a", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-07-07", "inflow_paise": 335000, "outflow_paise": 135000, "payer_id": "demo-customer-c", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-07-13", "inflow_paise": 695000, "outflow_paise": 255000, "payer_id": "demo-customer-a", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-07-14", "inflow_paise": 310000, "outflow_paise": 125000, "payer_id": "demo-customer-b", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-07-20", "inflow_paise": 710000, "outflow_paise": 265000, "payer_id": "demo-customer-a", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-07-21", "inflow_paise": 320000, "outflow_paise": 130000, "payer_id": "demo-customer-c", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-07-27", "inflow_paise": 730000, "outflow_paise": 280000, "payer_id": "demo-customer-a", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-07-28", "inflow_paise": 340000, "outflow_paise": 140000, "payer_id": "demo-customer-b", "source_rail": "aa", "provenance": "synthetic" }
+        ],
+        "documents": [],
+        "policy_version": "prototype-0.1"
+      },
+      "expected": { "status": "VALIDATED", "auth_gate": "PASS_OR_REVIEW_BY_MODEL", "p_auth_present": true, "p_stress_present": true, "capacity_present": true, "workflow_trace_contains": ["normalize", "authenticity", "stress", "policy_terms", "explain"] }
+    },
+    {
+      "name": "verified_duplicate_records_review_signal",
+      "inputs": {
+        "application_id": "demo-duplicate-records",
+        "schema_version": "1.0",
+        "shop": { "shop_id": "demo-shop-005", "name": "Sample Workshop E" },
+        "rails": [{ "rail_id": "rail-aa-2", "rail_type": "aa", "trust_class": "verified_simulated", "provenance": "synthetic" }],
+        "cashflows": [
+          { "t": "2026-11-02", "inflow_paise": 500000, "outflow_paise": 200000, "payer_id": "demo-payer-x", "source_rail": "aa", "provenance": "synthetic" },
+          { "t": "2026-11-02", "inflow_paise": 500000, "outflow_paise": 200000, "payer_id": "demo-payer-x", "source_rail": "aa", "provenance": "synthetic" }
+        ],
+        "documents": [],
+        "policy_version": "prototype-0.1"
+      },
+      "expected": { "status": "VALIDATED", "data_quality_duplicate_count": 1, "auth_gate": "REVIEW_OR_MORE_EVIDENCE", "workflow_trace_contains": ["normalize", "authenticity"] }
+    }
+  ]
+}

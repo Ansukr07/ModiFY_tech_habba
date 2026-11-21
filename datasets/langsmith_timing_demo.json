@@ -1,0 +1,1241 @@
+{
+  "name": "zerocibil-agent-workflow-timing-v1",
+  "description": "Five synthetic, verified clean-history runs for measuring end-to-end LangGraph and LangSmith trace latency.",
+  "examples": [
+    {
+      "name": "timing_case_01",
+      "inputs": {
+        "application_id": "demo-timing-01",
+        "schema_version": "1.0",
+        "shop": {
+          "shop_id": "demo-timing-shop-01",
+          "name": "Synthetic Timing Shop 01"
+        },
+        "rails": [
+          {
+            "rail_id": "demo-timing-aa-01",
+            "rail_type": "aa",
+            "trust_class": "verified_simulated",
+            "provenance": "synthetic"
+          }
+        ],
+        "cashflows": [
+          {
+            "t": "2026-05-04",
+            "inflow_paise": 700000,
+            "outflow_paise": 250000,
+            "payer_id": "case01-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-05",
+            "inflow_paise": 300000,
+            "outflow_paise": 120000,
+            "payer_id": "case01-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-11",
+            "inflow_paise": 720000,
+            "outflow_paise": 270000,
+            "payer_id": "case01-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-12",
+            "inflow_paise": 320000,
+            "outflow_paise": 130000,
+            "payer_id": "case01-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-18",
+            "inflow_paise": 680000,
+            "outflow_paise": 260000,
+            "payer_id": "case01-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-19",
+            "inflow_paise": 310000,
+            "outflow_paise": 125000,
+            "payer_id": "case01-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-25",
+            "inflow_paise": 710000,
+            "outflow_paise": 260000,
+            "payer_id": "case01-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-26",
+            "inflow_paise": 330000,
+            "outflow_paise": 135000,
+            "payer_id": "case01-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-01",
+            "inflow_paise": 690000,
+            "outflow_paise": 255000,
+            "payer_id": "case01-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-02",
+            "inflow_paise": 300000,
+            "outflow_paise": 120000,
+            "payer_id": "case01-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-08",
+            "inflow_paise": 730000,
+            "outflow_paise": 280000,
+            "payer_id": "case01-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-09",
+            "inflow_paise": 340000,
+            "outflow_paise": 140000,
+            "payer_id": "case01-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-15",
+            "inflow_paise": 700000,
+            "outflow_paise": 265000,
+            "payer_id": "case01-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-16",
+            "inflow_paise": 315000,
+            "outflow_paise": 125000,
+            "payer_id": "case01-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-22",
+            "inflow_paise": 715000,
+            "outflow_paise": 270000,
+            "payer_id": "case01-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-23",
+            "inflow_paise": 325000,
+            "outflow_paise": 130000,
+            "payer_id": "case01-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-29",
+            "inflow_paise": 705000,
+            "outflow_paise": 260000,
+            "payer_id": "case01-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-30",
+            "inflow_paise": 305000,
+            "outflow_paise": 125000,
+            "payer_id": "case01-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-06",
+            "inflow_paise": 725000,
+            "outflow_paise": 275000,
+            "payer_id": "case01-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-07",
+            "inflow_paise": 335000,
+            "outflow_paise": 135000,
+            "payer_id": "case01-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-13",
+            "inflow_paise": 695000,
+            "outflow_paise": 255000,
+            "payer_id": "case01-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-14",
+            "inflow_paise": 310000,
+            "outflow_paise": 125000,
+            "payer_id": "case01-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-20",
+            "inflow_paise": 710000,
+            "outflow_paise": 265000,
+            "payer_id": "case01-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-21",
+            "inflow_paise": 320000,
+            "outflow_paise": 130000,
+            "payer_id": "case01-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-27",
+            "inflow_paise": 730000,
+            "outflow_paise": 280000,
+            "payer_id": "case01-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-28",
+            "inflow_paise": 340000,
+            "outflow_paise": 140000,
+            "payer_id": "case01-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          }
+        ],
+        "documents": [],
+        "policy_version": "prototype-0.1"
+      },
+      "expected": {
+        "status": "VALIDATED",
+        "verdict": "OFFER",
+        "auth_gate": "PASS",
+        "p_auth_present": true,
+        "p_stress_present": true,
+        "capacity_present": true,
+        "workflow_trace_contains": [
+          "validate",
+          "normalize",
+          "authenticity",
+          "stress",
+          "policy_terms",
+          "decision_trace_builder"
+        ]
+      }
+    },
+    {
+      "name": "timing_case_02",
+      "inputs": {
+        "application_id": "demo-timing-02",
+        "schema_version": "1.0",
+        "shop": {
+          "shop_id": "demo-timing-shop-02",
+          "name": "Synthetic Timing Shop 02"
+        },
+        "rails": [
+          {
+            "rail_id": "demo-timing-aa-02",
+            "rail_type": "aa",
+            "trust_class": "verified_simulated",
+            "provenance": "synthetic"
+          }
+        ],
+        "cashflows": [
+          {
+            "t": "2026-05-04",
+            "inflow_paise": 700000,
+            "outflow_paise": 250000,
+            "payer_id": "case02-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-05",
+            "inflow_paise": 300000,
+            "outflow_paise": 120000,
+            "payer_id": "case02-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-11",
+            "inflow_paise": 720000,
+            "outflow_paise": 270000,
+            "payer_id": "case02-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-12",
+            "inflow_paise": 320000,
+            "outflow_paise": 130000,
+            "payer_id": "case02-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-18",
+            "inflow_paise": 680000,
+            "outflow_paise": 260000,
+            "payer_id": "case02-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-19",
+            "inflow_paise": 310000,
+            "outflow_paise": 125000,
+            "payer_id": "case02-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-25",
+            "inflow_paise": 710000,
+            "outflow_paise": 260000,
+            "payer_id": "case02-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-26",
+            "inflow_paise": 330000,
+            "outflow_paise": 135000,
+            "payer_id": "case02-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-01",
+            "inflow_paise": 690000,
+            "outflow_paise": 255000,
+            "payer_id": "case02-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-02",
+            "inflow_paise": 300000,
+            "outflow_paise": 120000,
+            "payer_id": "case02-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-08",
+            "inflow_paise": 730000,
+            "outflow_paise": 280000,
+            "payer_id": "case02-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-09",
+            "inflow_paise": 340000,
+            "outflow_paise": 140000,
+            "payer_id": "case02-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-15",
+            "inflow_paise": 700000,
+            "outflow_paise": 265000,
+            "payer_id": "case02-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-16",
+            "inflow_paise": 315000,
+            "outflow_paise": 125000,
+            "payer_id": "case02-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-22",
+            "inflow_paise": 715000,
+            "outflow_paise": 270000,
+            "payer_id": "case02-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-23",
+            "inflow_paise": 325000,
+            "outflow_paise": 130000,
+            "payer_id": "case02-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-29",
+            "inflow_paise": 705000,
+            "outflow_paise": 260000,
+            "payer_id": "case02-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-30",
+            "inflow_paise": 305000,
+            "outflow_paise": 125000,
+            "payer_id": "case02-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-06",
+            "inflow_paise": 725000,
+            "outflow_paise": 275000,
+            "payer_id": "case02-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-07",
+            "inflow_paise": 335000,
+            "outflow_paise": 135000,
+            "payer_id": "case02-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-13",
+            "inflow_paise": 695000,
+            "outflow_paise": 255000,
+            "payer_id": "case02-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-14",
+            "inflow_paise": 310000,
+            "outflow_paise": 125000,
+            "payer_id": "case02-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-20",
+            "inflow_paise": 710000,
+            "outflow_paise": 265000,
+            "payer_id": "case02-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-21",
+            "inflow_paise": 320000,
+            "outflow_paise": 130000,
+            "payer_id": "case02-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-27",
+            "inflow_paise": 730000,
+            "outflow_paise": 280000,
+            "payer_id": "case02-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-28",
+            "inflow_paise": 340000,
+            "outflow_paise": 140000,
+            "payer_id": "case02-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          }
+        ],
+        "documents": [],
+        "policy_version": "prototype-0.1"
+      },
+      "expected": {
+        "status": "VALIDATED",
+        "verdict": "OFFER",
+        "auth_gate": "PASS",
+        "p_auth_present": true,
+        "p_stress_present": true,
+        "capacity_present": true,
+        "workflow_trace_contains": [
+          "validate",
+          "normalize",
+          "authenticity",
+          "stress",
+          "policy_terms",
+          "decision_trace_builder"
+        ]
+      }
+    },
+    {
+      "name": "timing_case_03",
+      "inputs": {
+        "application_id": "demo-timing-03",
+        "schema_version": "1.0",
+        "shop": {
+          "shop_id": "demo-timing-shop-03",
+          "name": "Synthetic Timing Shop 03"
+        },
+        "rails": [
+          {
+            "rail_id": "demo-timing-aa-03",
+            "rail_type": "aa",
+            "trust_class": "verified_simulated",
+            "provenance": "synthetic"
+          }
+        ],
+        "cashflows": [
+          {
+            "t": "2026-05-04",
+            "inflow_paise": 700000,
+            "outflow_paise": 250000,
+            "payer_id": "case03-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-05",
+            "inflow_paise": 300000,
+            "outflow_paise": 120000,
+            "payer_id": "case03-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-11",
+            "inflow_paise": 720000,
+            "outflow_paise": 270000,
+            "payer_id": "case03-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-12",
+            "inflow_paise": 320000,
+            "outflow_paise": 130000,
+            "payer_id": "case03-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-18",
+            "inflow_paise": 680000,
+            "outflow_paise": 260000,
+            "payer_id": "case03-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-19",
+            "inflow_paise": 310000,
+            "outflow_paise": 125000,
+            "payer_id": "case03-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-25",
+            "inflow_paise": 710000,
+            "outflow_paise": 260000,
+            "payer_id": "case03-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-26",
+            "inflow_paise": 330000,
+            "outflow_paise": 135000,
+            "payer_id": "case03-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-01",
+            "inflow_paise": 690000,
+            "outflow_paise": 255000,
+            "payer_id": "case03-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-02",
+            "inflow_paise": 300000,
+            "outflow_paise": 120000,
+            "payer_id": "case03-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-08",
+            "inflow_paise": 730000,
+            "outflow_paise": 280000,
+            "payer_id": "case03-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-09",
+            "inflow_paise": 340000,
+            "outflow_paise": 140000,
+            "payer_id": "case03-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-15",
+            "inflow_paise": 700000,
+            "outflow_paise": 265000,
+            "payer_id": "case03-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-16",
+            "inflow_paise": 315000,
+            "outflow_paise": 125000,
+            "payer_id": "case03-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-22",
+            "inflow_paise": 715000,
+            "outflow_paise": 270000,
+            "payer_id": "case03-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-23",
+            "inflow_paise": 325000,
+            "outflow_paise": 130000,
+            "payer_id": "case03-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-29",
+            "inflow_paise": 705000,
+            "outflow_paise": 260000,
+            "payer_id": "case03-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-30",
+            "inflow_paise": 305000,
+            "outflow_paise": 125000,
+            "payer_id": "case03-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-06",
+            "inflow_paise": 725000,
+            "outflow_paise": 275000,
+            "payer_id": "case03-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-07",
+            "inflow_paise": 335000,
+            "outflow_paise": 135000,
+            "payer_id": "case03-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-13",
+            "inflow_paise": 695000,
+            "outflow_paise": 255000,
+            "payer_id": "case03-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-14",
+            "inflow_paise": 310000,
+            "outflow_paise": 125000,
+            "payer_id": "case03-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-20",
+            "inflow_paise": 710000,
+            "outflow_paise": 265000,
+            "payer_id": "case03-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-21",
+            "inflow_paise": 320000,
+            "outflow_paise": 130000,
+            "payer_id": "case03-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-27",
+            "inflow_paise": 730000,
+            "outflow_paise": 280000,
+            "payer_id": "case03-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-28",
+            "inflow_paise": 340000,
+            "outflow_paise": 140000,
+            "payer_id": "case03-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          }
+        ],
+        "documents": [],
+        "policy_version": "prototype-0.1"
+      },
+      "expected": {
+        "status": "VALIDATED",
+        "verdict": "OFFER",
+        "auth_gate": "PASS",
+        "p_auth_present": true,
+        "p_stress_present": true,
+        "capacity_present": true,
+        "workflow_trace_contains": [
+          "validate",
+          "normalize",
+          "authenticity",
+          "stress",
+          "policy_terms",
+          "decision_trace_builder"
+        ]
+      }
+    },
+    {
+      "name": "timing_case_04",
+      "inputs": {
+        "application_id": "demo-timing-04",
+        "schema_version": "1.0",
+        "shop": {
+          "shop_id": "demo-timing-shop-04",
+          "name": "Synthetic Timing Shop 04"
+        },
+        "rails": [
+          {
+            "rail_id": "demo-timing-aa-04",
+            "rail_type": "aa",
+            "trust_class": "verified_simulated",
+            "provenance": "synthetic"
+          }
+        ],
+        "cashflows": [
+          {
+            "t": "2026-05-04",
+            "inflow_paise": 700000,
+            "outflow_paise": 250000,
+            "payer_id": "case04-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-05",
+            "inflow_paise": 300000,
+            "outflow_paise": 120000,
+            "payer_id": "case04-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-11",
+            "inflow_paise": 720000,
+            "outflow_paise": 270000,
+            "payer_id": "case04-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-12",
+            "inflow_paise": 320000,
+            "outflow_paise": 130000,
+            "payer_id": "case04-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-18",
+            "inflow_paise": 680000,
+            "outflow_paise": 260000,
+            "payer_id": "case04-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-19",
+            "inflow_paise": 310000,
+            "outflow_paise": 125000,
+            "payer_id": "case04-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-25",
+            "inflow_paise": 710000,
+            "outflow_paise": 260000,
+            "payer_id": "case04-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-26",
+            "inflow_paise": 330000,
+            "outflow_paise": 135000,
+            "payer_id": "case04-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-01",
+            "inflow_paise": 690000,
+            "outflow_paise": 255000,
+            "payer_id": "case04-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-02",
+            "inflow_paise": 300000,
+            "outflow_paise": 120000,
+            "payer_id": "case04-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-08",
+            "inflow_paise": 730000,
+            "outflow_paise": 280000,
+            "payer_id": "case04-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-09",
+            "inflow_paise": 340000,
+            "outflow_paise": 140000,
+            "payer_id": "case04-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-15",
+            "inflow_paise": 700000,
+            "outflow_paise": 265000,
+            "payer_id": "case04-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-16",
+            "inflow_paise": 315000,
+            "outflow_paise": 125000,
+            "payer_id": "case04-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-22",
+            "inflow_paise": 715000,
+            "outflow_paise": 270000,
+            "payer_id": "case04-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-23",
+            "inflow_paise": 325000,
+            "outflow_paise": 130000,
+            "payer_id": "case04-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-29",
+            "inflow_paise": 705000,
+            "outflow_paise": 260000,
+            "payer_id": "case04-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-30",
+            "inflow_paise": 305000,
+            "outflow_paise": 125000,
+            "payer_id": "case04-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-06",
+            "inflow_paise": 725000,
+            "outflow_paise": 275000,
+            "payer_id": "case04-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-07",
+            "inflow_paise": 335000,
+            "outflow_paise": 135000,
+            "payer_id": "case04-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-13",
+            "inflow_paise": 695000,
+            "outflow_paise": 255000,
+            "payer_id": "case04-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-14",
+            "inflow_paise": 310000,
+            "outflow_paise": 125000,
+            "payer_id": "case04-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-20",
+            "inflow_paise": 710000,
+            "outflow_paise": 265000,
+            "payer_id": "case04-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-21",
+            "inflow_paise": 320000,
+            "outflow_paise": 130000,
+            "payer_id": "case04-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-27",
+            "inflow_paise": 730000,
+            "outflow_paise": 280000,
+            "payer_id": "case04-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-28",
+            "inflow_paise": 340000,
+            "outflow_paise": 140000,
+            "payer_id": "case04-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          }
+        ],
+        "documents": [],
+        "policy_version": "prototype-0.1"
+      },
+      "expected": {
+        "status": "VALIDATED",
+        "verdict": "OFFER",
+        "auth_gate": "PASS",
+        "p_auth_present": true,
+        "p_stress_present": true,
+        "capacity_present": true,
+        "workflow_trace_contains": [
+          "validate",
+          "normalize",
+          "authenticity",
+          "stress",
+          "policy_terms",
+          "decision_trace_builder"
+        ]
+      }
+    },
+    {
+      "name": "timing_case_05",
+      "inputs": {
+        "application_id": "demo-timing-05",
+        "schema_version": "1.0",
+        "shop": {
+          "shop_id": "demo-timing-shop-05",
+          "name": "Synthetic Timing Shop 05"
+        },
+        "rails": [
+          {
+            "rail_id": "demo-timing-aa-05",
+            "rail_type": "aa",
+            "trust_class": "verified_simulated",
+            "provenance": "synthetic"
+          }
+        ],
+        "cashflows": [
+          {
+            "t": "2026-05-04",
+            "inflow_paise": 700000,
+            "outflow_paise": 250000,
+            "payer_id": "case05-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-05",
+            "inflow_paise": 300000,
+            "outflow_paise": 120000,
+            "payer_id": "case05-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-11",
+            "inflow_paise": 720000,
+            "outflow_paise": 270000,
+            "payer_id": "case05-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-12",
+            "inflow_paise": 320000,
+            "outflow_paise": 130000,
+            "payer_id": "case05-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-18",
+            "inflow_paise": 680000,
+            "outflow_paise": 260000,
+            "payer_id": "case05-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-19",
+            "inflow_paise": 310000,
+            "outflow_paise": 125000,
+            "payer_id": "case05-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-25",
+            "inflow_paise": 710000,
+            "outflow_paise": 260000,
+            "payer_id": "case05-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-05-26",
+            "inflow_paise": 330000,
+            "outflow_paise": 135000,
+            "payer_id": "case05-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-01",
+            "inflow_paise": 690000,
+            "outflow_paise": 255000,
+            "payer_id": "case05-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-02",
+            "inflow_paise": 300000,
+            "outflow_paise": 120000,
+            "payer_id": "case05-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-08",
+            "inflow_paise": 730000,
+            "outflow_paise": 280000,
+            "payer_id": "case05-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-09",
+            "inflow_paise": 340000,
+            "outflow_paise": 140000,
+            "payer_id": "case05-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-15",
+            "inflow_paise": 700000,
+            "outflow_paise": 265000,
+            "payer_id": "case05-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-16",
+            "inflow_paise": 315000,
+            "outflow_paise": 125000,
+            "payer_id": "case05-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-22",
+            "inflow_paise": 715000,
+            "outflow_paise": 270000,
+            "payer_id": "case05-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-23",
+            "inflow_paise": 325000,
+            "outflow_paise": 130000,
+            "payer_id": "case05-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-29",
+            "inflow_paise": 705000,
+            "outflow_paise": 260000,
+            "payer_id": "case05-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-06-30",
+            "inflow_paise": 305000,
+            "outflow_paise": 125000,
+            "payer_id": "case05-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-06",
+            "inflow_paise": 725000,
+            "outflow_paise": 275000,
+            "payer_id": "case05-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-07",
+            "inflow_paise": 335000,
+            "outflow_paise": 135000,
+            "payer_id": "case05-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-13",
+            "inflow_paise": 695000,
+            "outflow_paise": 255000,
+            "payer_id": "case05-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-14",
+            "inflow_paise": 310000,
+            "outflow_paise": 125000,
+            "payer_id": "case05-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-20",
+            "inflow_paise": 710000,
+            "outflow_paise": 265000,
+            "payer_id": "case05-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-21",
+            "inflow_paise": 320000,
+            "outflow_paise": 130000,
+            "payer_id": "case05-demo-customer-c",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-27",
+            "inflow_paise": 730000,
+            "outflow_paise": 280000,
+            "payer_id": "case05-demo-customer-a",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          },
+          {
+            "t": "2026-07-28",
+            "inflow_paise": 340000,
+            "outflow_paise": 140000,
+            "payer_id": "case05-demo-customer-b",
+            "source_rail": "aa",
+            "provenance": "synthetic"
+          }
+        ],
+        "documents": [],
+        "policy_version": "prototype-0.1"
+      },
+      "expected": {
+        "status": "VALIDATED",
+        "verdict": "OFFER",
+        "auth_gate": "PASS",
+        "p_auth_present": true,
+        "p_stress_present": true,
+        "capacity_present": true,
+        "workflow_trace_contains": [
+          "validate",
+          "normalize",
+          "authenticity",
+          "stress",
+          "policy_terms",
+          "decision_trace_builder"
+        ]
+      }
+    }
+  ]
+}

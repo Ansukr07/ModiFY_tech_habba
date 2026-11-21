@@ -3,6 +3,7 @@
 import os
 from math import isfinite
 from typing import Any
+from zerocibil.observability import traceable
 
 
 class ScoringError(RuntimeError):
@@ -31,6 +32,7 @@ def _feature_number(features: dict[str, Any], name: str) -> float:
     return value
 
 
+@traceable(name="tool.model_score", run_type="tool")
 def score(
     model: str,
     features: dict[str, Any],

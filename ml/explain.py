@@ -1,28 +1,9 @@
+from zerocibil.tools.explanations import reconstruct
+
+
 def template_explain(assessment: dict, rails: list) -> dict:
-    types = [r.get("type") for r in rails]
-    rail_list = ", ".join(types) if types else "no rails"
-    v = assessment["verdict"]
-    if v == "UNVERIFIED":
-        owner = "We could not verify operations. A PDF or typed total does not set a credit limit. Connect simulated AA, UPI, or GST to continue."
-        lender = "No verified rail. Policy short-circuit UNVERIFIED before Model B. Principal is zero."
-    elif v == "DECLINE":
-        owner = "We cannot price this file from the rails we see. This is not a CIBIL score."
-        lender = f"Decline. not_run_reason={assessment.get('not_run_reason')}. No positive principal."
-    else:
-        owner = (
-            f"The application has no credit bureau file. Assessment uses {rail_list}. "
-            f"Proposed amount is limited by the weakest observed four-week cash-flow period."
-        )
-        lender = (
-            f"Verdict {v}. p_auth={assessment.get('p_auth')} p_stress={assessment.get('p_stress')}. "
-            "Amounts come from policy.py, not an LLM."
-        )
-    return {
-        "owner": owner,
-        "lender": lender,
-        "source_references": ["policy.py", "features.py", "rails"],
-        "fallback_used": True,
-    }
+    del rails
+    return reconstruct(assessment)
 
 
 def drivers_from_features(features: dict) -> list:

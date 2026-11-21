@@ -5,6 +5,7 @@ import re
 from typing import Any
 
 from zerocibil.tools.audit import append_event
+from zerocibil.observability import traceable
 
 _LITERAL = re.compile(rb"\((?:\\.|[^\\)])*\)")
 _ROW = re.compile(r"^STMT\|(\d{4}-\d{2}-\d{2})\|(\d+)\|(\d+)\|([^|]*)\|([^|]*)\|(.+)$")
@@ -51,6 +52,7 @@ def _extract(document: dict[str, Any]) -> tuple[list[dict[str, Any]], str]:
     return rows, "extracted" if rows else "extraction_failed"
 
 
+@traceable(name="node.document_intake", run_type="chain")
 def document_intake(state: dict[str, Any]) -> dict[str, Any]:
     documents = state.get("documents", [])
     document_rows = []

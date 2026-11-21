@@ -6,8 +6,10 @@ from math import log1p
 from typing import Any
 
 from zerocibil.config import Policy
+from zerocibil.observability import traceable
 
 
+@traceable(name="tool.normalize_cashflows", run_type="tool")
 def normalize_cashflows(
     raw: list[dict[str, Any]], rails: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
@@ -34,6 +36,7 @@ def normalize_cashflows(
     return out
 
 
+@traceable(name="tool.quality_check", run_type="tool")
 def quality_check(rows: list[dict[str, Any]]) -> dict[str, Any]:
     keys, duplicates, invalid = set(), 0, []
     for i, row in enumerate(rows):
@@ -56,6 +59,7 @@ def quality_check(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+@traceable(name="tool.weekly_series", run_type="tool")
 def weekly_series(rows: list[dict[str, Any]]) -> list[dict[str, int]]:
     buckets: dict[str, dict[str, int]] = defaultdict(
         lambda: {"inflow": 0, "outflow": 0}
@@ -71,6 +75,7 @@ def weekly_series(rows: list[dict[str, Any]]) -> list[dict[str, int]]:
     return [{"week": key, **value} for key, value in sorted(buckets.items())][-26:]
 
 
+@traceable(name="tool.build_features", run_type="tool")
 def build_features(
     rows: list[dict[str, Any]],
     weeks: list[dict[str, int]],
@@ -136,6 +141,7 @@ def build_features(
     return feats, []
 
 
+@traceable(name="tool.reconcile", run_type="tool")
 def reconcile(
     rails: list[dict[str, Any]],
     rows: list[dict[str, Any]],
@@ -157,6 +163,7 @@ def reconcile(
     }
 
 
+@traceable(name="tool.capacity", run_type="tool")
 def capacity(
     weeks: list[dict[str, int]],
     features: dict[str, float],

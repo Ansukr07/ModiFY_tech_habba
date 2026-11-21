@@ -3,11 +3,13 @@
 from typing import Any
 
 from zerocibil.config import DEFAULT_POLICY, Policy
-from zerocibil.tools.audit import append_event
+from zerocibil.tools.audit import append_decision_step, append_event
 from zerocibil.tools.finance import capacity
 from zerocibil.tools.scoring import ScoringError, score
+from zerocibil.observability import traceable
 
 
+@traceable(name="node.stress", run_type="chain")
 def analyze_stress(
     state: dict[str, Any], policy: Policy = DEFAULT_POLICY
 ) -> dict[str, Any]:
@@ -52,5 +54,17 @@ def analyze_stress(
     }
     result["audit_events"] = append_event(
         {**state, **result}, "stress", "stress_scored", {"band": band}
+    )
+    result["decision_trace"] = append_decision_step(
+        state,
+        stage="stress",
+        status="passed",
+        checks=[{
+            "check": "stress_score_band",
+            "status": "passed",
+            "score": probability,
+            "thresholds": {"low_max": policy.stress_low_max, "medium_max": policy.stress_medium_max},
+        }],
+        details={"stress_band": band, "model_variant": state.get("feature_variant"), "capacity": calculated_capacity},
     )
     return result

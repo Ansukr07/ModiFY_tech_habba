@@ -7,10 +7,12 @@ import math
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
 ROOT = Path(__file__).parent
+load_dotenv(ROOT.parent / ".env")
 sys.path.insert(0, str(ROOT))
 
 from artifacts import ScoringError, score_model
@@ -27,6 +29,8 @@ from explain import drivers_from_features, template_explain
 from features import build_features, verified_rail_count
 from model_features import auth_features, stress_features
 from policy import load_meta, underwrite
+from zerocibil.tools.explanations import reconstruct
+from zerocibil.observability import configure_tracing, traceable
 
 app = FastAPI(title="ZeroCIBIL score", version="0.1.0")
 
@@ -74,6 +78,7 @@ def _identity(shop: dict, rails: list[dict]):
     return ok, mismatch
 
 
+@traceable(name="ml.score_models", run_type="chain")
 def _model_scores(cashflows: list[dict]) -> dict:
     auth = auth_features(cashflows)
     stress = stress_features(cashflows, "B-full")
@@ -82,17 +87,20 @@ def _model_scores(cashflows: list[dict]) -> dict:
         p_auth, auth_version = score_model("authenticity", auth["vector"])
         scores["p_auth"] = p_auth
         scores["auth_version"] = auth_version
+        scores["auth_variant"] = "ml/models/auth.joblib"
     except Exception:
         scores["p_auth"] = None
     try:
         p_stress, stress_version = score_model("stress", stress["vector"], "B-full")
         scores["p_stress"] = p_stress
         scores["stress_version"] = stress_version
+        scores["stress_variant"] = "ml/models/stress.joblib:B-full"
     except Exception:
         scores["p_stress"] = None
     return scores
 
 
+@traceable(name="ml.run_score", run_type="chain")
 def run_score(body: dict, scores: dict | None = None) -> dict:
     _forbid_protected({"shop": {k: v for k, v in body["shop"].items() if k != "ownerFlags"}, "rails": body["rails"]})
     shop = {k: v for k, v in body["shop"].items() if k != "ownerFlags"}
@@ -114,10 +122,21 @@ def run_score(body: dict, scores: dict | None = None) -> dict:
     result["model_scores"] = {
         "p_auth": scores.get("p_auth"),
         "p_stress": scores.get("p_stress"),
+        "auth_version": scores.get("auth_version"),
+        "stress_version": scores.get("stress_version"),
+        "auth_artifact": scores.get("auth_variant"),
+        "stress_artifact": scores.get("stress_variant"),
         "note": "Uncalibrated trained scores. Policy verdicts still use the versioned heuristic until a domain-reviewed threshold is set.",
     }
     drv = drivers_from_features(feats)
-    expl = template_explain(result, rails)
+    expl = reconstruct({
+        **result,
+        "policy_version": body.get("policy_version", "v1"),
+        "model_versions": result.get("versions", {}),
+        "p_auth": scores.get("p_auth"),
+        "p_stress": scores.get("p_stress"),
+        "model_scores": result.get("model_scores"),
+    })
     raw = json.dumps(body, sort_keys=True, default=str)
     h = hashlib.sha256(raw.encode()).hexdigest()
     out = {
@@ -184,8 +203,7 @@ def score(body: dict):
 
 @app.post("/explain")
 def explain(body: dict):
-    rails = body.get("rails") or []
-    return {"explanation": template_explain(body, rails), "fallback_used": True}
+    return {"explanation": reconstruct(body)}
 
 
 @app.post("/stress-test")
@@ -226,7 +244,7 @@ def _run_agent(payload: dict) -> dict:
         })
     graph = build_graph()
     documents = payload.get("documents") or []
-    state = graph.invoke({
+    initial_state = {
         "application_id": payload["application_id"],
         "schema_version": "1.0",
         "shop": payload["shop"],
@@ -234,7 +252,17 @@ def _run_agent(payload: dict) -> dict:
         "cashflows": payload.get("cashflows") or [],
         "documents": documents,
         "policy_version": payload.get("policy_version", "v1"),
-    })
+    }
+    safe_app_id = hashlib.sha256(str(payload["application_id"]).encode()).hexdigest()[:16]
+    state = graph.invoke(initial_state, config=configure_tracing(
+        "underwriting-agent",
+        {
+            "application_id_hash": safe_app_id,
+            "policy_version": payload.get("policy_version", "v1"),
+            "feature_schema_version": "1.0",
+            "entrypoint": "internal_agent",
+        },
+    ))
     extracted = state.get("statement_rows") or []
     score_cashflows = extracted or payload.get("cashflows") or []
     payload = {**payload, "cashflows": score_cashflows}
@@ -245,7 +273,8 @@ def _run_agent(payload: dict) -> dict:
         scores["p_stress"] = state["p_stress"]
     out = run_score(payload, scores=scores)
     events = state.get("audit_events") or []
-    out["workflow_trace"] = [event.get("node") or event.get("event") for event in events] or ["validate", "document_intake", "normalize", "authenticity", "stress", "policy", "explain"]
+    out["workflow_trace"] = [step.get("stage") for step in state.get("decision_trace", [])] or [event.get("node") or event.get("event") for event in events]
+    out["decision_trace"] = state.get("decision_trace", [])
     out["agent_status"] = state.get("status")
     out["auth_gate"] = state.get("auth_gate")
     if state.get("verification_requests"):
@@ -266,6 +295,7 @@ def _run_agent(payload: dict) -> dict:
         "provenance_summary",
         "errors",
         "explanation",
+        "decision_trace",
         "model_versions",
         "owner_language",
     ):
@@ -283,7 +313,7 @@ def agent(body: ScoreIn):
         return _run_agent(payload)
     except Exception:
         out = run_score(payload)
-        out["workflow_trace"] = ["validate", "features", "policy", "explain", "agent_unavailable"]
+        out["workflow_trace"] = ["validate", "features", "policy", "decision_trace", "agent_unavailable"]
         return out
 
 

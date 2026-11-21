@@ -2,11 +2,13 @@
 
 from typing import Any
 
-from zerocibil.tools.audit import append_event
+from zerocibil.tools.audit import append_decision_step, append_event
+from zerocibil.observability import traceable
 
 SUPPORTED_SCHEMA = "1.0"
 
 
+@traceable(name="node.validate", run_type="chain")
 def validate(state: dict[str, Any]) -> dict[str, Any]:
     errors = list(state.get("errors", []))
     if state.get("schema_version") != SUPPORTED_SCHEMA:
@@ -55,6 +57,19 @@ def validate(state: dict[str, Any]) -> dict[str, Any]:
         "provenance_summary": provenance_counts,
         "status": status,
     }
+    result["decision_trace"] = append_decision_step(
+        state,
+        stage="validate",
+        status="passed" if not errors else "failed",
+        checks=[
+            {"check": "schema_version", "status": "passed" if state.get("schema_version") == SUPPORTED_SCHEMA else "failed"},
+            {"check": "application_shape", "status": "passed" if state.get("application_id") and isinstance(state.get("shop"), dict) else "failed"},
+            {"check": "rails_shape", "status": "passed" if isinstance(state.get("rails", []), list) and all(isinstance(rail, dict) for rail in state.get("rails", [])) else "failed"},
+            {"check": "cashflows_shape", "status": "passed" if isinstance(state.get("cashflows", []), list) and all(isinstance(row, dict) for row in state.get("cashflows", [])) else "failed"},
+        ],
+        reason_codes=[error.get("code", "VALIDATION_FAILED") for error in errors],
+        details={"verified_rail_count": verified_count, "provenance_summary": provenance_counts},
+    )
     result["audit_events"] = append_event(
         {**state, **result},
         "validate",
@@ -65,6 +80,7 @@ def validate(state: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+@traceable(name="route.after_validate", run_type="chain")
 def route_after_validate(state: dict) -> str:
     if state.get("errors"):
         return "fail_closed"

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import datetime, timedelta
+from zerocibil.observability import traceable
 
 
 VERIFIED = {"verified", "verified_simulated"}
@@ -41,6 +42,7 @@ def verified_rail_count(rails: list[dict]) -> int:
     return n
 
 
+@traceable(name="ml.build_features", run_type="tool")
 def build_features(shop: dict, rails: list[dict], cashflows: list[dict]) -> dict:
     vrc = verified_rail_count(rails)
     by_payer: dict[str, int] = defaultdict(int)

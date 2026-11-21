@@ -1,0 +1,38 @@
+%%{init: {"flowchart": {"htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 34, "curve": "linear"}, "theme": "base", "themeVariables": {"fontFamily": "Arial", "fontSize": "17px", "primaryColor": "#e8f2ff", "primaryTextColor": "#102a43", "primaryBorderColor": "#2670a8", "lineColor": "#54738c"}}}%%
+flowchart LR
+    START((Start)) --> ORCH[Underwriting Orchestrator<br/>validate application and rails]
+    ORCH --> ROUTE{Input route}
+    ROUTE -->|Documents| DOC[Document Intake Agent<br/>extract supported statement rows]
+    DOC --> ANALYST[Financial Data Analyst<br/>normalize, quality check, build features]
+    ROUTE -->|Verified rails, no documents| ANALYST
+    ANALYST --> QUALITY{Data quality?}
+    QUALITY -->|Pass| AUTH[Authenticity Investigator]
+    AUTH --> MODELA[ML Model A<br/>auth.joblib; p_auth]
+    MODELA --> GATE{Authenticity gate}
+    GATE -->|PASS| STRESS[Cash-Flow Stress Analyst]
+    STRESS --> MODELB[ML Model B<br/>stress.joblib; B-full / B-inflow]
+    MODELB --> CAPACITY[Capacity calculation<br/>uses p_stress]
+    CAPACITY --> POLICY[Deterministic Terms Policy]
+    GATE -->|Review / evidence| POLICY
+    ROUTE -->|No verified rails| POLICY
+    POLICY --> TRACE[Decision Trace Builder<br/>checks, predictions, policy, provenance]
+    TRACE --> FINISH((End))
+
+    ROUTE -->|Invalid| FAIL[Fail-Closed Handler<br/>record reason; require review]
+    QUALITY -->|Fail| FAIL
+    MODELA -. scoring service failure .-> FAIL
+    MODELB -. scoring service failure .-> FAIL
+    FAIL --> TRACE
+
+    FALLBACK[Scoring fallback<br/>configured service, or labeled heuristic if no URL]
+    MODELA -. artifact unavailable .-> FALLBACK
+    MODELB -. artifact unavailable .-> FALLBACK
+    FALLBACK -. score .-> MODELA
+    FALLBACK -. score .-> MODELB
+
+    classDef agent fill:#dceeff,stroke:#2670a8,color:#102a43,stroke-width:1.5px;
+    classDef model fill:#e2f5e9,stroke:#38855a,color:#163b27,stroke-width:1.5px;
+    classDef decision fill:#fff0d1,stroke:#bf8212,color:#4c3500,stroke-width:1.5px;
+    class ORCH,DOC,ANALYST,AUTH,STRESS,TRACE agent;
+    class MODELA,MODELB model;
+    class ROUTE,QUALITY,GATE,POLICY,FAIL,FALLBACK decision;

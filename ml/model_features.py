@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from statistics import median
 
 import numpy as np
+from zerocibil.observability import traceable
 
 AUTH_ORDER = [
     "payer_hhi",
@@ -78,6 +79,7 @@ def excluded_row_reason(row: dict) -> str | None:
     return None
 
 
+@traceable(name="ml.auth_features", run_type="tool")
 def auth_features(cashflows: list[dict], account_id: str | None = None) -> dict:
     credits = []
     excluded = []
@@ -151,6 +153,7 @@ def _nan() -> float:
     return math.nan
 
 
+@traceable(name="ml.stress_features", run_type="tool")
 def stress_features(cashflows: list[dict], variant: str = "B-full") -> dict:
     digital: dict[datetime, float] = defaultdict(float)
     outflow: dict[datetime, float] = defaultdict(float)

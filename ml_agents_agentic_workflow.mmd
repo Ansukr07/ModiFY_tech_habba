@@ -1,0 +1,79 @@
+flowchart TD
+    IN[Application, rails, documents, cashflows]
+    API{ML service endpoint}
+
+    IN --> API
+    API -->|POST /internal/agent| AGENT_ENTRY[Normalize rail fields and invoke Agentic graph]
+    API -->|POST /score or /internal/score| DIRECT_SCORE[run_score directly]
+    API -->|POST /explain| EXPLAIN_ONLY[Reconstruct explanation from supplied assessment]
+    API -->|POST /stress-test| STRESS_SCENARIO[Adjust cashflows and run scenario score]
+
+    subgraph GRAPH[Agentic LangGraph workflow]
+        START((Start)) --> VALIDATE[Underwriting Orchestrator: validate schema, input, rails]
+        VALIDATE --> ROUTE{Validation route}
+        ROUTE -->|Invalid input| FAIL[Fail-Closed Handler: record reason and require review]
+        ROUTE -->|No verified rails| POLICY
+        ROUTE -->|Documents provided| DOCS[Document Intake Agent: extract supported bank statement rows; mark uploads]
+        ROUTE -->|Verified rails, no documents| NORMALIZE
+        DOCS --> NORMALIZE[Financial Data Analyst: normalize rows, quality checks, weekly series, features, reconciliation]
+        NORMALIZE --> QUALITY{Data quality}
+        QUALITY -->|Failed| FAIL
+        QUALITY -->|Passed| AUTH[Authenticity Investigator]
+        AUTH --> SCORE_A[Score authenticity from normalized features]
+        SCORE_A -->|Scoring failure| FAIL
+        SCORE_A --> AUTH_P[p_auth, model version, band and evidence flags]
+        AUTH_P --> GATE{Authenticity gate}
+        GATE -->|PASS| STRESS[Cash-Flow and Stress Analyst]
+        GATE -->|Review or more evidence| POLICY[Deterministic Terms Policy]
+        STRESS --> SCORE_B[Score cash-flow stress with selected variant]
+        SCORE_B -->|Scoring failure| FAIL
+        SCORE_B --> STRESS_P[p_stress and model version]
+        STRESS_P --> CAPACITY[Calculate cautious capacity using p_stress]
+        CAPACITY --> POLICY
+        POLICY --> TRACE[Decision Trace Builder: reconstruct checks, predictions, policy, provenance]
+        FAIL --> TRACE
+        TRACE --> END((End))
+    end
+
+    AGENT_ENTRY --> START
+
+    subgraph SCORING[Model scoring and decision policy]
+        SCORE_A -->|local artifact available| AUTH_ART[ML Model A artifact: auth.joblib]
+        SCORE_B -->|local artifact available| STRESS_ART[ML Model B artifact: stress.joblib]
+        AUTH_ART --> AUTH_P
+        STRESS_ART --> STRESS_P
+        SCORE_A -. artifact unavailable .-> FALLBACK[Configured scoring service; labeled heuristic fallback if none]
+        SCORE_B -. artifact unavailable .-> FALLBACK
+        FALLBACK -. score result .-> AUTH_P
+        FALLBACK -. score result .-> STRESS_P
+    end
+
+    TRACE --> SERVICE_POST[ML service continues after graph]
+    SERVICE_POST --> MODEL_FEATS[Build model-specific Model A and Model B feature vectors]
+    MODEL_FEATS --> MODEL_ARTIFACTS[Model-specific feature builders and trained artifacts: auth.joblib and stress.joblib]
+    MODEL_ARTIFACTS --> MODEL_SCORE[Return p_auth, p_stress, versions or null on scoring error]
+    MODEL_SCORE --> MODEL_MERGE[Prefer graph predictions when present; otherwise retain service predictions]
+    TRACE --> MODEL_MERGE
+    MODEL_MERGE --> UNDERWRITE[run_score: policy arithmetic still uses versioned heuristic underwriting policy]
+    UNDERWRITE --> RESPONSE[API response: verdict, terms, model_scores, explanation, workflow_trace, decision_trace, agent_detail]
+    API -. graph invocation exception .-> AGENT_FALLBACK[run_score fallback; mark agent_unavailable]
+    AGENT_FALLBACK --> RESPONSE
+    DIRECT_SCORE --> RESPONSE
+    EXPLAIN_ONLY --> RESPONSE
+    STRESS_SCENARIO --> RESPONSE
+
+    subgraph OBS[Observability]
+        TRACE_EVENTS[Decision steps and audit events]
+        LANGSMITH[LangSmith: graph node runs and safe summarized tool spans]
+    end
+    VALIDATE -. audit .-> TRACE_EVENTS
+    NORMALIZE -. audit .-> TRACE_EVENTS
+    AUTH -. audit .-> TRACE_EVENTS
+    STRESS -. audit .-> TRACE_EVENTS
+    POLICY -. audit .-> TRACE_EVENTS
+    TRACE -. emit traced run .-> LANGSMITH
+
+    classDef warning fill:#fff0d6,stroke:#c07800,color:#382500;
+    classDef output fill:#e4f5e9,stroke:#39834b,color:#173b20;
+    class FALLBACK,AGENT_FALLBACK warning;
+    class RESPONSE output;

@@ -3,6 +3,7 @@
 from typing import Any
 
 from zerocibil.config import DEFAULT_POLICY, Policy
+from zerocibil.tools.audit import append_decision_step
 from zerocibil.tools.finance import (
     build_features,
     normalize_cashflows,
@@ -10,6 +11,7 @@ from zerocibil.tools.finance import (
     reconcile,
     weekly_series,
 )
+from zerocibil.observability import traceable
 
 
 def _statement_result(state: dict[str, Any], rows: list[dict[str, Any]], quality: dict[str, Any], weeks: list[dict[str, int]] | None = None) -> dict[str, Any] | None:
@@ -25,6 +27,7 @@ def _statement_result(state: dict[str, Any], rows: list[dict[str, Any]], quality
     return intake
 
 
+@traceable(name="node.financial_analyst", run_type="chain")
 def analyze(
     state: dict[str, Any], policy: Policy = DEFAULT_POLICY
 ) -> dict[str, Any]:
@@ -39,6 +42,13 @@ def analyze(
         intake = _statement_result(state, rows, quality)
         if intake:
             failed["statement_intake"] = intake
+        failed["decision_trace"] = append_decision_step(
+            state,
+            stage="normalize",
+            status="failed",
+            checks=[{"check": "cashflow_quality", "status": "failed", "evidence": quality}],
+            reason_codes=["INVALID_CASHFLOW_ROWS"],
+        )
         return failed
 
     weeks = weekly_series(rows)
@@ -71,4 +81,16 @@ def analyze(
     intake = _statement_result(state, rows, quality, weeks)
     if intake:
         result["statement_intake"] = intake
+    result["decision_trace"] = append_decision_step(
+        state,
+        stage="normalize",
+        status="passed",
+        checks=[{"check": "cashflow_quality", "status": "passed", "evidence": quality}],
+        details={
+            "feature_variant": variant,
+            "missing_features": missing,
+            "reconciliation": reconciliation,
+            "history_weeks": len(weeks),
+        },
+    )
     return result

@@ -1,16 +1,14 @@
-"""Create a plain-language explanation from recorded workflow facts."""
+"""Build the final decision trace from recorded workflow evidence."""
 
+from zerocibil.observability import traceable
 from zerocibil.tools.audit import append_event
-from zerocibil.tools.explanations import generate
+from zerocibil.tools.explanations import reconstruct
 
 
+@traceable(name="node.decision_trace", run_type="chain")
 def explain(state: dict) -> dict:
-    language = state.get("owner_language", "en")
-    result = {"explanation": generate(state, language)}
+    result = {"explanation": reconstruct(state)}
     result["audit_events"] = append_event(
-        {**state, **result},
-        "explain",
-        "explanation_created",
-        {"fallback": True},
+        {**state, **result}, "decision_trace", "decision_trace_reconstructed"
     )
     return result
