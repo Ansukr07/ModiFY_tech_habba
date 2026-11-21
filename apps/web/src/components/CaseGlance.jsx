@@ -122,6 +122,7 @@ export function EvidenceBoard({ weeks, leanDates, decision, rails, verified, sho
   const reviewAt = decision?.policy_thresholds?.gst_upi_gap_review_above;
   return <>
     <div className="dashboard-analysis" id="evidence">
+      {verified.length === 0 && rails.some((rail) => rail.type === "aa") && <p role="status">Setu consent completed, but the bank data has not passed verification yet. Ask the owner to open the application and select “Check bank consent and data”.</p>}
       <section className="dashboard-chart-card">
         <div className="dashboard-card-heading">
           <div>

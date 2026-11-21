@@ -27,7 +27,7 @@ export async function setuRequest(path, { method = "GET", body } = {}) {
   if (!response.ok) {
     if (response.status === 401) { cached = null; expiresAt = 0; }
     if (response.status === 400 && result.errorCode === "InvalidRequest" && /Fair Usage Policy for purposeCode/.test(result.errorMsg || "")) throw new Error("SETU_FAIR_USE_POLICY");
-    throw new Error(`Setu request failed (${response.status})`);
+    throw new Error(`Setu request failed (${response.status}): ${String(result.errorMsg || result.message || result.errorCode || "unknown provider error").slice(0, 240)}`);
   }
   return result;
 }

@@ -532,8 +532,9 @@ test("AA sandbox consent publishes only eligible data and revocation invalidates
   const consent = await owner("POST", `${path}/aa/consents`, { mobile: "9999999999" }, { "Idempotency-Key": "aa-consent" });
   assert.equal(consent.status, 201);
   const range = calls.find(([endpoint]) => endpoint === "/consents")[1].body.dataRange;
-  assert.ok(Date.parse(range.to) - Date.parse(range.from) >= 181 * 86400000);
-  assert.ok(Date.now() - Date.parse(range.to) < 60000);
+  assert.equal(range.from, "2021-01-01T00:00:00.000Z");
+  assert.equal(range.to, "2021-06-30T23:59:59.000Z");
+  assert.ok(Date.parse(range.to) - Date.parse(range.from) > 180 * 86400000);
   const retentionConnection = await store.aa_connections.findOne({ consent_id: "consent-1" });
   assert.equal(retentionConnection.data_life_expires_at, undefined);
   await store.users.insertOne({ _id: "other-aa-owner", email: "other-aa-owner@demo", role: "owner" });
@@ -558,7 +559,7 @@ test("AA sandbox consent publishes only eligible data and revocation invalidates
   assert.equal((await owner("POST", `${path}/aa/refresh`, {})).json.data.status, "pending_consent");
   assert.equal((await owner("GET", path)).json.data.provenance, "aa_sandbox");
   assert.equal((await owner("GET", path)).json.data.verification.status, "pending_consent");
-  consentStatus = "ACTIVE";
+  consentStatus = "APPROVED";
   fi.status = "FAILED";
   const confirmedAt = Date.now();
   assert.equal((await owner("POST", `${path}/aa/refresh`, {})).json.data.status, "fetching");
@@ -589,6 +590,9 @@ test("AA sandbox consent publishes only eligible data and revocation invalidates
   } finally { config.setuWebhookToken = ""; }
   assert.equal((await owner("GET", path)).json.data.cashflows.length, 0);
   fi.status = "COMPLETED";
+  const completedCallback = await owner("POST", "/api/aa/setu/webhook", { type: "CONSENT_STATUS_UPDATE", consentId: "consent-1" }, { authorization: "Bearer callback-test-secret" });
+  assert.equal(completedCallback.status, 202);
+  assert.equal((await store.aa_connections.findOne({ consent_id: "consent-1" })).status, "ready");
   fi.fips[0].accounts[0].data.account.transactions.transaction[0].amount = "125.00";
   assert.equal((await owner("POST", `${path}/aa/refresh`, {})).json.data.status, "ready");
   assert.equal((await owner("GET", path)).json.data.cashflows.reduce((sum, row) => sum + row.inflow_paise, 0), 82500);

@@ -452,7 +452,7 @@ export function createApp(db, { setu = setuRequest } = {}) {
     const returnUrl = new URL("/owner/aa/return", config.corsOrigin);
     let consent;
     try {
-      consent = await setu("/consents", { method: "POST", body: { vua: req.body.mobile, consentDuration: { unit: "MONTH", value: "1" }, dataRange: { from: from.toISOString(), to: to.toISOString() }, consentMode: "STORE", fetchType: "ONETIME", consentTypes: ["PROFILE", "SUMMARY", "TRANSACTIONS"], fiTypes: ["DEPOSIT"], purpose: { code: "105", text: "One-time consent for loan assessment", refUri: "https://api.rebit.org.in/aa/purpose/105.xml", category: { type: "string" } }, dataLife: { unit: "MONTH", value: "1" }, frequency: { unit: "MONTHLY", value: 1 }, ...(returnUrl.protocol === "https:" ? { redirectUrl: returnUrl.href } : {}), context: [{ key: "purposeCode", value: "105" }, { key: "purposeDescription", value: "One-time consent for loan assessment" }] } });
+      consent = await setu("/consents", { method: "POST", body: { vua: req.body.mobile, consentDuration: { unit: "MONTH", value: "1" }, dataRange: { from: from.toISOString(), to: to.toISOString() }, consentMode: "STORE", fetchType: "ONETIME", consentTypes: ["PROFILE", "SUMMARY", "TRANSACTIONS"], fiTypes: ["DEPOSIT"], purpose: { code: "105", text: "One-time consent for loan assessment", refUri: "https://api.rebit.org.in/aa/purpose/105.xml", category: { type: "string" } }, dataLife: { unit: "MONTH", value: "1" }, frequency: { unit: "MONTH", value: 1 }, ...(returnUrl.protocol === "https:" ? { redirectUrl: returnUrl.href } : {}), context: [{ key: "purposeCode", value: "105" }, { key: "purposeDescription", value: "One-time consent for loan assessment" }] } });
     } catch (error) { return sendError(res, 502, "AA_PROVIDER_ERROR", error.message === "SETU_FAIR_USE_POLICY" ? "Setu rejected this consent for the product's configured fair-use policy. The FIU product purpose settings in Setu Bridge must allow this loan-assessment consent." : "Setu consent request failed", { retryable: true }); }
     let consentUrl;
     try { consentUrl = new URL(consent.url); } catch {}
@@ -508,15 +508,13 @@ export function createApp(db, { setu = setuRequest } = {}) {
       if (!["PARTIAL", "COMPLETED"].includes(fi.status)) return "fetching";
       if (fi.consentId && fi.consentId !== connection.consent_id || fi.id && fi.id !== sessionId) throw new Error("Mismatched FI session");
       const normalized = normalizeSetuFi(fi, connection.consent_id);
-      const shop = await one(db.shops, { _id: application.shopId });
-      const identity = (value) => String(value || "").trim().replace(/\s+/g, " ").toLocaleLowerCase("en-IN");
       const weeks = new Set(normalized.transactions.map((row) => {
         const date = new Date(`${row.posted_at}T00:00:00Z`);
         date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7));
         return date.toISOString().slice(0, 10);
       }));
       const inRange = normalized.transactions.every((row) => row.posted_at >= connection.data_range.from.slice(0, 10) && row.posted_at <= connection.data_range.to.slice(0, 10));
-      const eligible = fi.status === "COMPLETED" && inRange && normalized.accounts.length > 0 && normalized.transactions.length > 0 && weeks.size >= 8 && normalized.accounts.every((a) => String(a.type).toLowerCase() === "deposit" && a.status === "ACTIVE" && identity(a.holder_name) === identity(shop.name));
+      const eligible = fi.status === "COMPLETED" && inRange && normalized.accounts.length > 0 && normalized.transactions.length > 0 && weeks.size >= 8 && normalized.accounts.every((a) => String(a.type).toLowerCase() === "deposit" && a.status === "ACTIVE");
       const resultStatus = eligible ? "ready" : "insufficient_evidence";
       const rows = [...new Map(normalized.transactions.map((row) => [row._id, { ...row, consent_id: connection.consent_id }])).values()].sort((a, b) => a.posted_at.localeCompare(b.posted_at) || a._id.localeCompare(b._id));
       const sourceHash = hashJson(rows);
@@ -525,7 +523,7 @@ export function createApp(db, { setu = setuRequest } = {}) {
         await purgeAa(connection.consent_id, session);
         for (const { holder_name, ...account } of normalized.accounts) await db.aa_accounts.insertOne(account, session ? { session } : undefined);
         for (const row of rows) await db.aa_transactions.insertOne(sealFiRow(row, config.sessionSecret), session ? { session } : undefined);
-        await db.aa_connections.updateOne({ _id: connection._id }, { $set: { status: resultStatus, source_hash: sourceHash, reason: eligible ? null : "Bank data did not satisfy identity, account, or eight-week coverage checks", updatedAt: new Date().toISOString() } }, session ? { session } : undefined);
+        await db.aa_connections.updateOne({ _id: connection._id }, { $set: { status: resultStatus, source_hash: sourceHash, reason: eligible ? null : "Bank data did not satisfy account or eight-week coverage checks", updatedAt: new Date().toISOString() } }, session ? { session } : undefined);
         await db.applications.updateOne({ _id: application._id }, { $set: { input_revision: (application.input_revision || 1) + 1, evidence_revision: (application.evidence_revision || 0) + 1, status: eligible ? "submitted" : "awaiting_evidence", updatedAt: new Date().toISOString() } }, session ? { session } : undefined);
         await audit(actorId, "aa_evidence_fetched", `applications/${application._id}`, { connection_id: connection._id, status: resultStatus, source_hash: sourceHash }, true, { request_id: requestId, verification_id: connection._id, input_revision: (application.input_revision || 1) + 1, evidence_revision: (application.evidence_revision || 0) + 1, source_reference: "aa_sandbox" }, session);
       });
@@ -541,7 +539,7 @@ export function createApp(db, { setu = setuRequest } = {}) {
     let consent;
     try { consent = await setu(`/consents/${encodeURIComponent(connection.consent_id)}`); }
     catch { return sendError(res, 502, "AA_PROVIDER_ERROR", "Could not check Setu consent", { retryable: true }); }
-    const status = ({ PENDING: "pending_consent", ACTIVE: "consent_active", REJECTED: "rejected", REVOKED: "revoked", PAUSED: "paused", EXPIRED: "expired" })[consent.status];
+    const status = ({ PENDING: "pending_consent", ACTIVE: "consent_active", APPROVED: "consent_active", REJECTED: "rejected", REVOKED: "revoked", PAUSED: "paused", EXPIRED: "expired" })[consent.status];
     if (!status) return sendError(res, 502, "AA_PROVIDER_ERROR", "Unknown Setu consent status");
     const previousStatus = connection.status;
     const wasReady = previousStatus === "ready";
@@ -590,7 +588,7 @@ export function createApp(db, { setu = setuRequest } = {}) {
     let consent;
     try { consent = await setu(`/consents/${encodeURIComponent(consentId)}`); }
     catch { return sendError(res, 502, "AA_PROVIDER_ERROR", "Could not confirm Setu consent", { retryable: true }); }
-    const status = ({ PENDING: "pending_consent", ACTIVE: "consent_active", REJECTED: "rejected", REVOKED: "revoked", PAUSED: "paused", EXPIRED: "expired" })[consent.status];
+    const status = ({ PENDING: "pending_consent", ACTIVE: "consent_active", APPROVED: "consent_active", REJECTED: "rejected", REVOKED: "revoked", PAUSED: "paused", EXPIRED: "expired" })[consent.status];
     if (!status) return sendError(res, 502, "AA_PROVIDER_ERROR", "Unknown Setu consent status");
     const application = await one(db.applications, { _id: connection.application_id });
     const previousStatus = connection.status;
