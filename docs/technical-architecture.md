@@ -15,7 +15,7 @@ flowchart LR
   DB -->|Application and verified evidence| API
 ```
 
-The bank account, transaction, rail, and statement data in this repository are synthetic. The trained authenticity and stress scores are exposed by the scoring service, while the policy verdict still uses versioned heuristics pending domain calibration. The lender makes the final credit decision; the scenario result does not overwrite the base assessment. MongoDB is the durable store when configured, with a process-local memory fallback for demos.
+The bank account, transaction, rail, and statement data in this repository are synthetic. Trained authenticity and stress artifacts are loaded by both the LangGraph workflow and scoring service. The legacy FastAPI underwriting path reports trained scores as metadata while its verdict still uses versioned heuristic policy; the LangGraph path uses trained scores in its authenticity and stress gates followed by capacity and offer policy. Model probabilities remain uncalibrated for Indian MSME/UPI outcomes. The lender makes the final credit decision; the scenario result does not overwrite the base assessment. MongoDB is the durable store when configured, with a process-local memory fallback for demos.
 
 Source: the current React, Express and Python code, and `spec-new.md`. The full product diagram above reflects the current service boundaries. The older diagrams below retain their original prototype and proposed-target captions. Demo rail verification is simulated, not a production UPI, bank or Account Aggregator connection.
 
@@ -27,7 +27,7 @@ Use one diagram per 16:9 slide. The Mermaid versions run left to right in three 
 Landscape exports for PowerPoint (1920 × 1080):
 
 - [Application and service flow — PNG](../output/architecture/application-service-flow-landscape.png) · [SVG](../output/architecture/application-service-flow-landscape.svg)
-- [Proposed training and agents — PNG](../output/architecture/training-agent-architecture-landscape.png) · [SVG](../output/architecture/training-agent-architecture-landscape.svg)
+- [ML training and agent workflow — PNG](../output/architecture/training-agent-architecture-landscape.png) · [SVG](../output/architecture/training-agent-architecture-landscape.svg)
 
 SVG keeps lines and text sharp when resized. Each numbered lane continues left to right; error handling and evaluation boxes summarize separate branches.
 
@@ -66,41 +66,58 @@ flowchart LR
 
 Implemented prototype with simulated evidence and heuristic-v0.
 
-### Slide B — Proposed training and agent architecture
+### Slide B — ML training and agent workflow
 
 ```mermaid
 flowchart LR
-  subgraph TRAIN["Offline Model B training â€” proposed"]
+  subgraph TRAIN["Offline training — implemented"]
     direction TB
-    A["Berka bank data: Czech, CZK<br/>Canonical weekly, scale-free features<br/>Stress label: next 4-week net below<br/>35% of own monthly inflow"]
-    B["Account split 70 / 15 / 15, seed 42<br/>Logistic baseline + gradient boosting<br/>Grouped CV, validation calibration"]
-    C[("Holdout ROC-AUC, PR-AUC, Brier<br/>Class balance + loan sanity check<br/>Joblib, metadata and model card")]
-    A --> B --> C
+    A["Berka PKDD'99 data<br/>Weekly stress features and next-four-week-net proxy label"]
+    B["XGBoost stress model<br/>B-inflow and B-full variants"]
+    C["IBM AML HI-Small<br/>Synthetic transaction labels"]
+    D["XGBoost authenticity model<br/>Account-level suspicious-label target"]
+    E[("joblib artifacts + meta.json<br/>Feature names and model versions")]
+    F["Holdout reports and model cards<br/>Stress label is a proxy; scores uncalibrated"]
+    A --> B --> E
+    C --> D --> E
+    E --> F
   end
-  subgraph AGENT["Typed LangGraph tools â€” proposed"]
+  subgraph AGENT["LangGraph application workflow — implemented"]
     direction TB
-    D["Validate application and pin versions<br/>Provenance, verified rails, identity<br/>Normalize and build weekly features"]
-    E["Load versioned stress artifacts<br/>Model B-inflow or B-full by outflow rail<br/>Then authenticity: Model A or rules"]
-    F["Investigate exceptions if needed<br/>GST / bank / UPI reconciliation<br/>Concentration, invoices, missing evidence"]
-    G["Deterministic capacity and terms<br/>Lean month = worst 4-week net / 4 Ã— 52 / 12<br/>Policy haircut, EMI, principal, counteroffer"]
-    D --> E --> F --> G
+    G["Validate schema, application and rails<br/>No verified rail → UNVERIFIED"]
+    H["Optional bank statement intake<br/>Extract synthetic STMT rows<br/>Owner uploads remain unverified"]
+    I["Normalize cashflows<br/>Quality checks, weekly features,<br/>reconciliation and B variant"]
+    J["Authenticity model + evidence gate<br/>PASS, REVIEW or MORE_EVIDENCE"]
+    K["Stress model: B-full with verified AA<br/>Otherwise B-inflow"]
+    L["Capacity and versioned offer policy<br/>Terms or review outcome"]
+    M["Reconstruct explanation and decision trace<br/>Append audit events"]
+    N["Fail closed on validation, data quality<br/>or scoring errors; send to review"]
+    G -->|Documents| H --> I
+    G -->|No documents| I
+    I --> J
+    J -->|PASS| K --> L --> M
+    J -->|REVIEW / MORE_EVIDENCE| L
+    G -. Invalid .-> N --> M
+    I -. Invalid data .-> N
+    J -. Scoring failure .-> N
+    K -. Scoring failure .-> N
   end
-  subgraph DELIVERY["Explanation, audit and evaluation"]
+  subgraph SERVICE["FastAPI scoring and evaluation paths"]
     direction TB
-    H["Grounded explanation agent<br/>Drivers + versioned policy outputs<br/>Template fallback if LLM fails"]
-    I["Audit before completion<br/>Hash, provenance, outputs, versions<br/>Lender owns final credit decision"]
-    J["Separate evaluation routes<br/>Financial twins: identical terms<br/>Labelled baseline + scenario-only stress"]
-    H --> I
-    I -.-> J
-  N["Failure controls<br/>No verified rail: UNVERIFIED<br/>Identity failure: review / decline<br/>Model or schema failure: fail closed<br/>Audit failure: retry, no completion"]
-    I -.-> N
+    O["/internal/score<br/>Trained scores in response;<br/>heuristic policy sets verdict"]
+    P["/internal/agent<br/>Invoke LangGraph; fallback to<br/>/score if graph raises"]
+    Q["/internal/model-score<br/>Model + feature vector + variant"]
+    R["/internal/fairness<br/>Compare paired verdicts and terms"]
+    P --> O
+    Q -. Loads artifacts .-> E
+    R -. Separate evaluation .-> O
   end
-  TRAIN -->|"Artifacts"| AGENT
-  AGENT -->|"Result"| DELIVERY
+  E -. Load artifacts .-> J
+  E -. Load artifacts .-> K
+  AGENT -->|Agent result| P
 ```
 
-Proposed target. Berka proxy data, trained models and LangGraph are not implemented claims.
-
+Training notebooks, saved artifacts and LangGraph are implemented. Berka stress labels are a proxy and IBM AML is synthetic. FastAPI heuristic-policy scoring and LangGraph model-driven gates are distinct paths.
 ## 1. Application and service flow — full detail
 
 ```mermaid
@@ -309,3 +326,4 @@ flowchart TB
 - `apps/api/src/createApp.js`, `apps/api/src/scoreClient.js`, `apps/api/src/store.js`, `apps/api/src/index.js`
 - `ml/service.py`, `ml/features.py`, `ml/policy.py`, `ml/explain.py`, `ml/models/meta.json`
 - `spec-new.md`, sections 3–8, 10–18 and 22–24
+

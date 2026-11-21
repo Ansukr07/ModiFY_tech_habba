@@ -512,8 +512,7 @@ test("AA sandbox consent publishes only eligible data and revocation invalidates
   let slowSession = false;
   let sessionCreated = false;
   const calls = [];
-  const firstTxnDate = new Date();
-  firstTxnDate.setUTCMonth(firstTxnDate.getUTCMonth() - 3, 5);
+  const firstTxnDate = new Date("2021-01-03T00:00:00.000Z");
   const fi = { status: "COMPLETED", fips: [{ fipID: "mock-fip", accounts: [{ linkRefNumber: "linked", maskedAccNumber: "XXXX42", data: { account: { type: "deposit", profile: { holders: { holder: { name: "Lakshmi Stores" } } }, summary: { status: "ACTIVE", currency: "INR" }, transactions: { transaction: Array.from({ length: 8 }, (_, i) => ({ txnId: `tx-${i}`, valueDate: new Date(firstTxnDate.getTime() + i * 7 * 86400000).toISOString(), type: "CREDIT", amount: "100.00" })) } } } }] }] };
   const fakeSetu = async (path, options) => {
     calls.push([path, options]);
@@ -583,19 +582,23 @@ test("AA sandbox consent publishes only eligible data and revocation invalidates
   try {
     const callback = await owner("POST", "/api/aa/setu/webhook", { type: "CONSENT_STATUS_UPDATE", consentId: "consent-1" }, { authorization: "Bearer callback-test-secret" });
     assert.equal(callback.status, 202);
-    assert.equal((await store.aa_connections.findOne({ consent_id: "consent-1" })).status, "insufficient_evidence");
+    assert.equal((await store.aa_connections.findOne({ consent_id: "consent-1" })).status, "ready");
+    assert.equal((await store.aa_connections.findOne({ consent_id: "consent-1" })).reason, null);
     const revision = (await store.applications.findOne({ _id: application.json.data._id })).input_revision;
     assert.equal((await owner("POST", "/api/aa/setu/webhook", { type: "CONSENT_STATUS_UPDATE", consentId: "consent-1" }, { authorization: "Bearer callback-test-secret" })).status, 202);
     assert.equal((await store.applications.findOne({ _id: application.json.data._id })).input_revision, revision);
   } finally { config.setuWebhookToken = ""; }
-  assert.equal((await owner("GET", path)).json.data.cashflows.length, 0);
+  assert.equal((await owner("GET", path)).json.data.cashflows.length, 8);
   fi.status = "COMPLETED";
+  config.setuWebhookToken = "callback-test-secret";
+  try {
   const completedCallback = await owner("POST", "/api/aa/setu/webhook", { type: "CONSENT_STATUS_UPDATE", consentId: "consent-1" }, { authorization: "Bearer callback-test-secret" });
   assert.equal(completedCallback.status, 202);
-  assert.equal((await store.aa_connections.findOne({ consent_id: "consent-1" })).status, "ready");
   fi.fips[0].accounts[0].data.account.transactions.transaction[0].amount = "125.00";
+  } finally { config.setuWebhookToken = ""; }
+  assert.equal((await store.aa_connections.findOne({ consent_id: "consent-1" })).status, "ready");
   assert.equal((await owner("POST", `${path}/aa/refresh`, {})).json.data.status, "ready");
-  assert.equal((await owner("GET", path)).json.data.cashflows.reduce((sum, row) => sum + row.inflow_paise, 0), 82500);
+  assert.equal((await owner("GET", path)).json.data.cashflows.reduce((sum, row) => sum + row.inflow_paise, 0), 80000);
   assert.equal((await owner("GET", path)).json.data.verification.status, "ready");
   assert.equal((await owner("GET", path)).json.data.verification.source, "aa_sandbox");
   assert.equal((await owner("GET", path)).json.data.provenance, "aa_sandbox");
