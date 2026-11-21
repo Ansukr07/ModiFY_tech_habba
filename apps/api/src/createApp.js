@@ -446,14 +446,17 @@ export function createApp(db, { setu = setuRequest } = {}) {
     }
     if (setu === setuRequest && (!config.setuClientId || !config.setuClientSecret || !config.setuProductInstanceId)) return sendError(res, 503, "AA_UNAVAILABLE", "Setu sandbox is not configured");
     const now = new Date();
+    // Setu sandbox deposits expose mock transactions only for Jan–Jun 2021.
     const from = new Date("2021-01-01T00:00:00.000Z");
     const to = new Date("2021-06-30T23:59:59.000Z");
     const returnUrl = new URL("/owner/aa/return", config.corsOrigin);
     let consent;
     try {
-      consent = await setu("/consents", { method: "POST", body: { vua: req.body.mobile, consentDuration: { unit: "MONTH", value: "1" }, dataRange: { from: from.toISOString(), to: to.toISOString() }, ...(returnUrl.protocol === "https:" ? { redirectUrl: returnUrl.href } : {}), context: [] } });
-    } catch (error) { return sendError(res, 502, "AA_PROVIDER_ERROR", error.message === "SETU_FAIR_USE_POLICY" ? "Setu rejected this consent under the FIU product's fair use policy. Check its purpose and consent settings in Setu Bridge, then retry." : "Setu consent request failed", { retryable: true }); }
-    if (!consent.id || !/^https:\/\/fiu-sandbox\.setu\.co\//.test(consent.url || "")) return sendError(res, 502, "AA_PROVIDER_ERROR", "Setu returned an invalid consent response");
+      consent = await setu("/consents", { method: "POST", body: { vua: req.body.mobile, consentDuration: { unit: "MONTH", value: "1" }, dataRange: { from: from.toISOString(), to: to.toISOString() }, consentMode: "STORE", fetchType: "ONETIME", consentTypes: ["PROFILE", "SUMMARY", "TRANSACTIONS"], fiTypes: ["DEPOSIT"], purpose: { code: "105", text: "One-time consent for loan assessment", refUri: "https://api.rebit.org.in/aa/purpose/105.xml", category: { type: "string" } }, dataLife: { unit: "MONTH", value: "1" }, frequency: { unit: "MONTHLY", value: 1 }, ...(returnUrl.protocol === "https:" ? { redirectUrl: returnUrl.href } : {}), context: [{ key: "purposeCode", value: "105" }, { key: "purposeDescription", value: "One-time consent for loan assessment" }] } });
+    } catch (error) { return sendError(res, 502, "AA_PROVIDER_ERROR", error.message === "SETU_FAIR_USE_POLICY" ? "Setu rejected this consent for the product's configured fair-use policy. The FIU product purpose settings in Setu Bridge must allow this loan-assessment consent." : "Setu consent request failed", { retryable: true }); }
+    let consentUrl;
+    try { consentUrl = new URL(consent.url); } catch {}
+    if (!consent.id || consentUrl?.protocol !== "https:" || !["fiu-sandbox.setu.co", "fiu-uat.setu.co"].includes(consentUrl.hostname) || !consentUrl.pathname.startsWith("/v2/consents/")) return sendError(res, 502, "AA_PROVIDER_ERROR", "Setu returned an invalid consent response");
     const connection = { _id: crypto.randomUUID(), application_id: application._id, owner_id: req.session.userId, consent_id: consent.id, consent_url: consent.url, mobile_hash: crypto.createHmac("sha256", config.sessionSecret).update(req.body.mobile).digest("hex"), status: "pending_consent", data_range: { from: from.toISOString(), to: to.toISOString() }, createdAt: now.toISOString() };
     await db.aa_connections.insertOne(connection);
     await audit(req.session.userId, "aa_consent_requested", `applications/${application._id}`, { connection_id: connection._id }, true, { request_id: req.id, verification_id: connection._id, source_reference: "aa_sandbox" });

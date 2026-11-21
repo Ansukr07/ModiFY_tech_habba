@@ -512,7 +512,9 @@ test("AA sandbox consent publishes only eligible data and revocation invalidates
   let slowSession = false;
   let sessionCreated = false;
   const calls = [];
-  const fi = { status: "COMPLETED", fips: [{ fipID: "mock-fip", accounts: [{ linkRefNumber: "linked", maskedAccNumber: "XXXX42", data: { account: { type: "deposit", profile: { holders: { holder: { name: "Lakshmi Stores" } } }, summary: { status: "ACTIVE", currency: "INR" }, transactions: { transaction: Array.from({ length: 8 }, (_, i) => ({ txnId: `tx-${i}`, valueDate: new Date(Date.UTC(2021, 0, 5 + i * 7)).toISOString(), type: "CREDIT", amount: "100.00" })) } } } }] }] };
+  const firstTxnDate = new Date();
+  firstTxnDate.setUTCMonth(firstTxnDate.getUTCMonth() - 3, 5);
+  const fi = { status: "COMPLETED", fips: [{ fipID: "mock-fip", accounts: [{ linkRefNumber: "linked", maskedAccNumber: "XXXX42", data: { account: { type: "deposit", profile: { holders: { holder: { name: "Lakshmi Stores" } } }, summary: { status: "ACTIVE", currency: "INR" }, transactions: { transaction: Array.from({ length: 8 }, (_, i) => ({ txnId: `tx-${i}`, valueDate: new Date(firstTxnDate.getTime() + i * 7 * 86400000).toISOString(), type: "CREDIT", amount: "100.00" })) } } } }] }] };
   const fakeSetu = async (path, options) => {
     calls.push([path, options]);
     if (path === "/consents" && options?.method === "POST") return { id: "consent-1", url: "https://fiu-sandbox.setu.co/v2/consents/webview/consent-1" };
@@ -529,6 +531,9 @@ test("AA sandbox consent publishes only eligible data and revocation invalidates
   const path = `/api/applications/${application.json.data._id}`;
   const consent = await owner("POST", `${path}/aa/consents`, { mobile: "9999999999" }, { "Idempotency-Key": "aa-consent" });
   assert.equal(consent.status, 201);
+  const range = calls.find(([endpoint]) => endpoint === "/consents")[1].body.dataRange;
+  assert.ok(Date.parse(range.to) - Date.parse(range.from) >= 181 * 86400000);
+  assert.ok(Date.now() - Date.parse(range.to) < 60000);
   const retentionConnection = await store.aa_connections.findOne({ consent_id: "consent-1" });
   assert.equal(retentionConnection.data_life_expires_at, undefined);
   await store.users.insertOne({ _id: "other-aa-owner", email: "other-aa-owner@demo", role: "owner" });
@@ -548,7 +553,6 @@ test("AA sandbox consent publishes only eligible data and revocation invalidates
     assert.equal(callback.status, 202);
     assert.equal((await store.aa_connections.findOne({ consent_id: "consent-1" })).status, "pending_consent");
   } finally { config.setuWebhookToken = ""; }
-  assert.equal(calls.find(([p]) => p === "/consents")[1].body.dataRange.from.slice(0, 10), "2021-01-01");
   assert.equal(calls.find(([p]) => p === "/consents")[1].body.redirectUrl, config.corsOrigin.startsWith("https://") ? new URL("/owner/aa/return", config.corsOrigin).href : undefined);
   assert.equal((await owner("POST", `${path}/verification-requests`, { public_ref: "DEMO-ACCT-001" }, { "Idempotency-Key": "no-mix" })).status, 409);
   assert.equal((await owner("POST", `${path}/aa/refresh`, {})).json.data.status, "pending_consent");
@@ -593,8 +597,8 @@ test("AA sandbox consent publishes only eligible data and revocation invalidates
   assert.equal((await owner("GET", path)).json.data.provenance, "aa_sandbox");
   const summary = (await owner("GET", path)).json.data.verification;
   assert.equal(summary.account_count, 1);
-  assert.equal(summary.covered_from, "2021-01-05");
-  assert.equal(summary.covered_to, "2021-02-23");
+  assert.equal(summary.covered_from, firstTxnDate.toISOString().slice(0, 10));
+  assert.equal(summary.covered_to, new Date(firstTxnDate.getTime() + 49 * 86400000).toISOString().slice(0, 10));
   assert.equal(summary.evidence_revision, (await store.applications.findOne({ _id: application.json.data._id })).evidence_revision);
   assert.equal((await owner("GET", `${path}/aa/connection`)).json.data.transaction_count, 8);
   assert.equal((await store.aa_accounts.findOne({ consent_id: "consent-1" })).holder_name, undefined);
@@ -619,7 +623,7 @@ test("AA sandbox consent publishes only eligible data and revocation invalidates
   await store.applications.updateOne({ _id: application.json.data._id }, { $set: { latest_decision_id: "aa-saved-decision" } });
   const report = await lender("GET", `${path}/report`);
   assert.equal(report.json.data.verification.account_count, 1);
-  assert.equal(report.json.data.verification.covered_to, "2021-02-23");
+  assert.equal(report.json.data.verification.covered_to, new Date(firstTxnDate.getTime() + 49 * 86400000).toISOString().slice(0, 10));
   await store.aa_connections.updateOne({ consent_id: "consent-1" }, { $set: { consent_expires_at: "2021-07-01T00:00:00Z" } });
   const expiredConnection = await owner("GET", `${path}/aa/connection`);
   assert.equal(expiredConnection.json.data.status, "expired");

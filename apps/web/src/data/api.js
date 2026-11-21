@@ -6,7 +6,7 @@ export async function api(path, options = {}) {
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const err = new Error(body.error?.message || "Request failed");
+    const err = new Error(body.error?.message || `Request failed (HTTP ${response.status}). Please retry; if it continues, check the API server.`);
     err.code = body.error?.code;
     err.retryable = Boolean(body.error?.retryable);
     throw err;
