@@ -2,7 +2,7 @@ import { config } from "./config.js";
 
 export async function scoreHealth() {
   try {
-    const r = await fetch(`${config.scoreUrl}/health`, { signal: AbortSignal.timeout(3000) });
+    const r = await fetch(`${config.scoreUrl}/health`, { headers: config.scorerApiKey ? { "x-scorer-key": config.scorerApiKey } : {}, signal: AbortSignal.timeout(3000) });
     if (!r.ok) return { ok: false };
     return { ok: true, ...(await r.json()) };
   } catch {
@@ -13,7 +13,7 @@ export async function scoreHealth() {
 export async function postScore(path, body) {
   const r = await fetch(`${config.scoreUrl}${path}`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...(config.scorerApiKey ? { "x-scorer-key": config.scorerApiKey } : {}) },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(20000),
   });

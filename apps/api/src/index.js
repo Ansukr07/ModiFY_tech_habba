@@ -4,7 +4,7 @@ import { memoryDb, mongoDb } from "./store.js";
 
 async function openDb() {
   if (config.mongoUri === "memory") return memoryDb();
-  return mongoDb(config.mongoUri);
+  return mongoDb(config.mongoUri, { requireTransactions: config.appEnv === "production" });
 }
 
 const db = await openDb();

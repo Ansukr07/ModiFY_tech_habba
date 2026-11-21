@@ -270,6 +270,9 @@
 .dashboard-row-arrow { font-size:18px; color:#344d89 !important; }
 .dashboard-queue-empty { padding:44px 26px; text-align:center; }
 .dashboard-queue-empty p { color:#68738a; font-size:12px; }
+.dashboard-queue-pagination { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 0; border-top:1px solid var(--line); }
+.dashboard-queue-pagination span { color:var(--ink-2); font-size:13px; font-variant-numeric:tabular-nums; text-align:center; }
+@media(max-width:700px) { .dashboard-queue-pagination { display:grid; grid-template-columns:1fr 1fr; } .dashboard-queue-pagination span { grid-column:1/-1; grid-row:1; } }
 .dashboard-overview-link { margin-top:20px; text-align:right; }
 .dashboard-overview-link a { color:#263c77; font-size:13px; font-weight:600; text-underline-offset:4px; }
 @media (max-width:800px) { .dashboard-queue-labels { display:none; } .dashboard-queue-row { grid-template-columns:minmax(130px,1fr) auto auto 20px; gap:8px; padding:16px; } .dashboard-queue-row > span:nth-child(2),.dashboard-queue-row > span:nth-child(4) { display:none; } .dashboard-queue-tools { padding:0 16px 16px; } .dashboard-queue-heading { padding:20px 16px; } }
@@ -413,7 +416,7 @@
 .dashboard-cashflow-dots { z-index:3; pointer-events:none; }
 .dashboard-cashflow-dots i { position:absolute; width:8px; height:8px; border-radius:50%; background:#fff; box-shadow:inset 0 0 0 2px #151e3d; transform:translate(-50%,-50%); }
 .dashboard-cashflow-cols { position:relative; z-index:2; display:flex; }
-.dashboard-cashflow-col { flex:1 0 36px; display:flex; flex-direction:column; gap:8px; min-width:0; margin:0; padding:0; border:0; background:transparent; color:inherit; font:inherit; cursor:pointer; }
+.dashboard-cashflow-col { flex:1 0 36px; display:flex; flex-direction:column; gap:8px; min-width:0; margin:0; padding:0; border:0; background:transparent; color:inherit; font:inherit; }
 .dashboard-cashflow-col:focus-visible { outline:2px solid #151e3d; outline-offset:2px; }
 .dashboard-cashflow-plotcol { position:relative; height:220px; }
 .dashboard-cashflow-col.is-lean .dashboard-cashflow-plotcol { background:#f3effc; }

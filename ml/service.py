@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import hmac
 import json
 import math
+import os
 import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
 ROOT = Path(__file__).parent
@@ -32,7 +34,18 @@ from policy import load_meta, underwrite
 from zerocibil.tools.explanations import reconstruct
 from zerocibil.observability import configure_tracing, traceable
 
-app = FastAPI(title="ZeroCIBIL score", version="0.1.0")
+SCORER_API_KEY = os.getenv("SCORER_API_KEY", "")
+PRODUCTION = os.getenv("APP_ENV", "development").lower() == "production"
+if PRODUCTION and len(SCORER_API_KEY) < 32:
+    raise RuntimeError("SCORER_API_KEY must be at least 32 characters when APP_ENV=production")
+
+
+def require_scorer_key(x_scorer_key: str | None = Header(default=None)):
+    if PRODUCTION and (not x_scorer_key or not hmac.compare_digest(x_scorer_key, SCORER_API_KEY)):
+        raise HTTPException(status_code=401, detail="SCORER_UNAUTHORIZED")
+
+
+app = FastAPI(title="ZeroCIBIL score", version="0.1.0", dependencies=[Depends(require_scorer_key)])
 
 
 class ScoreIn(BaseModel):

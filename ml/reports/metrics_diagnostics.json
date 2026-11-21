@@ -1,0 +1,72 @@
+{
+  "scope": "Derived from synthetic held-out confusion matrices at validation-selected thresholds; saved stress model metrics are included when available.",
+  "auc_status": "Saved stress artifact ROC-AUC and average precision are reported separately; source reports still lack held-out probabilities.",
+  "models": {
+    "stress/B-inflow": {
+      "negative_support": 724,
+      "positive_support": 3776,
+      "positive_prevalence": 0.8391111111111111,
+      "majority_baseline_accuracy": 0.8391111111111111,
+      "accuracy": 0.8391111111111111,
+      "accuracy_minus_majority_baseline": 0.0,
+      "specificity": 0.0,
+      "balanced_accuracy": 0.5
+    },
+    "stress/B-full": {
+      "negative_support": 724,
+      "positive_support": 3776,
+      "positive_prevalence": 0.8391111111111111,
+      "majority_baseline_accuracy": 0.8391111111111111,
+      "accuracy": 0.8391111111111111,
+      "accuracy_minus_majority_baseline": 0.0,
+      "specificity": 0.0027624309392265192,
+      "balanced_accuracy": 0.5011163849611386
+    },
+    "auth/xgboost": {
+      "negative_support": 62155,
+      "positive_support": 941,
+      "positive_prevalence": 0.014913782173196399,
+      "majority_baseline_accuracy": 0.9850862178268036,
+      "accuracy": 0.9752440725244073,
+      "accuracy_minus_majority_baseline": -0.009842145302396355,
+      "specificity": 0.9883195237712171,
+      "balanced_accuracy": 0.5499514728314109
+    },
+    "auth/random_forest": {
+      "negative_support": 62155,
+      "positive_support": 941,
+      "positive_prevalence": 0.014913782173196399,
+      "majority_baseline_accuracy": 0.9850862178268036,
+      "accuracy": 0.9848801825789274,
+      "accuracy_minus_majority_baseline": -0.00020603524787621286,
+      "specificity": 0.9991472930576784,
+      "balanced_accuracy": 0.5208276316510496
+    },
+    "stress_saved/B-inflow": {
+      "negative_support": 724,
+      "positive_support": 3776,
+      "positive_prevalence": 0.8391111111111111,
+      "majority_baseline_accuracy": 0.8391111111111111,
+      "accuracy": 0.8391111111111111,
+      "accuracy_minus_majority_baseline": 0.0,
+      "specificity": 0.0,
+      "balanced_accuracy": 0.5,
+      "roc_auc": 0.673858851191591,
+      "average_precision": 0.9154031007257875,
+      "matches_source_report": true
+    },
+    "stress_saved/B-full": {
+      "negative_support": 724,
+      "positive_support": 3776,
+      "positive_prevalence": 0.8391111111111111,
+      "majority_baseline_accuracy": 0.8391111111111111,
+      "accuracy": 0.6557777777777778,
+      "accuracy_minus_majority_baseline": -0.18333333333333335,
+      "specificity": 0.5939226519337016,
+      "balanced_accuracy": 0.6307801818990542,
+      "roc_auc": 0.7087515509410993,
+      "average_precision": 0.9224148633899406,
+      "matches_source_report": false
+    }
+  }
+}

@@ -52,6 +52,7 @@ Expected generated artifacts:
 - `models/auth.joblib` — Model A XGBoost estimator, imputer, selected threshold, and feature metadata; probabilities are uncalibrated.
 - `models/meta.json` — shared version, feature, training, provenance, and metric metadata.
 - `reports/metrics_stress.json`, `reports/metrics_auth.json` — model evaluation metrics.
+- `reports/metrics_diagnostics.json` — reproducible class-balance, majority-baseline, specificity, and balanced-accuracy calculations derived from the reported held-out confusion matrices; generate with `python ml/derive_eval_diagnostics.py`. Updated training notebook cells now add ROC-AUC and average precision when reports are regenerated from held-out probabilities; current checked-in source metrics still need a full notebook rerun to populate them.
 - `reports/model_card_stress.md`, `reports/model_card_auth.md` — intended use and limits.
 
 The notebooks are organized into task-level cells with a markdown explanation before each stage and code comments within computational cells.

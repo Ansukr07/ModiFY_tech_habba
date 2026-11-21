@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "./auth.jsx";
 import { Gate } from "./pages/Gate.jsx";
 import { Login } from "./pages/Login.jsx";
 import { OwnerApply } from "./pages/OwnerApply.jsx";
+import { SetuReturn } from "./pages/SetuReturn.jsx";
 import { OwnerStatus } from "./pages/OwnerStatus.jsx";
 import { OwnerDashboard } from "./pages/OwnerDashboard.jsx";
 import { OwnerApplications } from "./pages/OwnerApplications.jsx";
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/" element={<Gate />} />
         <Route path="/login" element={<Login />} />
         <Route path="/apply" element={<Protected role="owner"><OwnerApply /></Protected>} />
+        <Route path="/owner/aa/return" element={<Protected role="owner"><SetuReturn /></Protected>} />
         <Route path="/status/:id" element={<Protected role="owner"><OwnerStatus /></Protected>} />
         <Route path="/owner" element={<Protected role="owner"><OwnerDashboard /></Protected>} />
         <Route path="/owner/applications" element={<Protected role="owner"><OwnerApplications /></Protected>} />

@@ -40,7 +40,7 @@ export function Shell({ role, children }) {
           </Button>
         </div>
       </header>
-      <main id="main">{children}</main>
+      <main id="main" tabIndex={-1}>{children}</main>
     </div>
   );
 }

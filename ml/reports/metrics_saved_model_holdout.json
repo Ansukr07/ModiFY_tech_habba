@@ -1,0 +1,96 @@
+{
+  "scope": "Saved stress model estimators evaluated on the original account-grouped notebook holdout; no retraining.",
+  "source_dataset": "ml2/Berka_dataset/trans.csv",
+  "source_artifact": "ml/models/stress.joblib",
+  "input_sha256": {
+    "notebook": "08856d5704a1de662940821f05c9568b7a2861a8c3e1582451b962574c9e7871",
+    "artifact": "dbb56b7f69d93d25b16998334eea6098cedf47e66f9bd7bf782370a228199210",
+    "source_report": "e0fd253021e0c1eb15663ae1e4a7afacc2ffc1dffbcf8d78f09ac430c27dbdb5"
+  },
+  "results": {
+    "B-inflow": {
+      "model_version": "stress-v1",
+      "feature_names": [
+        "p10_rel",
+        "cv_weekly_inflow",
+        "slope_rel",
+        "lean_month_ratio",
+        "active_week_ratio",
+        "cv_missing"
+      ],
+      "threshold": 0.05,
+      "test_rows": 4500,
+      "test_accounts": 97,
+      "positive_prevalence": 0.8391111111111111,
+      "confusion_matrix": [
+        [
+          0,
+          724
+        ],
+        [
+          0,
+          3776
+        ]
+      ],
+      "source_report_confusion_matrix": [
+        [
+          0,
+          724
+        ],
+        [
+          0,
+          3776
+        ]
+      ],
+      "matches_source_report": true,
+      "roc_auc": 0.673858851191591,
+      "average_precision": 0.9154031007257875,
+      "brier_score": 0.2347756326198578,
+      "specificity": 0.0,
+      "balanced_accuracy": 0.5
+    },
+    "B-full": {
+      "model_version": "stress-v1",
+      "feature_names": [
+        "p10_rel",
+        "cv_weekly_inflow",
+        "slope_rel",
+        "lean_month_ratio",
+        "active_week_ratio",
+        "cv_missing",
+        "outflow_ratio",
+        "log1p_unique_payers"
+      ],
+      "threshold": 0.4699999999999999,
+      "test_rows": 4500,
+      "test_accounts": 97,
+      "positive_prevalence": 0.8391111111111111,
+      "confusion_matrix": [
+        [
+          430,
+          294
+        ],
+        [
+          1255,
+          2521
+        ]
+      ],
+      "source_report_confusion_matrix": [
+        [
+          2,
+          722
+        ],
+        [
+          2,
+          3774
+        ]
+      ],
+      "matches_source_report": false,
+      "roc_auc": 0.7087515509410993,
+      "average_precision": 0.9224148633899406,
+      "brier_score": 0.22408288717269897,
+      "specificity": 0.5939226519337016,
+      "balanced_accuracy": 0.6307801818990542
+    }
+  }
+}

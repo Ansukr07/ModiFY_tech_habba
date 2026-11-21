@@ -1,6 +1,23 @@
 # ZeroCIBIL technical architecture
 
-Source: the current React, Express and Python code, and `spec-new.md`. Solid connections describe implemented behavior unless labelled otherwise. Dashed connections describe the proposed ML and agent workflow. Demo rail verification is simulated, not a production UPI, bank or Account Aggregator connection.
+## Full product architecture
+
+```mermaid
+flowchart LR
+  Owner[MSME owner] --> Web[React web app<br/>Owner, bank and lender portals]
+  Bank[Bank administrator] --> Web
+  Lender[Lender analyst] --> Web
+  Web --> API[Express API<br/>Access control, applications,<br/>verification and lender actions]
+  API --> DB[(MongoDB<br/>Applications, evidence,<br/>decisions and audit)]
+  API --> Score[FastAPI scoring service<br/>LangGraph intake and analysis,<br/>policy, explanation and scenarios]
+  Models[(Trained model artifacts)] --> Score
+  Score -->|Assessment and scenarios| API
+  DB -->|Application and verified evidence| API
+```
+
+The bank account, transaction, rail, and statement data in this repository are synthetic. The trained authenticity and stress scores are exposed by the scoring service, while the policy verdict still uses versioned heuristics pending domain calibration. The lender makes the final credit decision; the scenario result does not overwrite the base assessment. MongoDB is the durable store when configured, with a process-local memory fallback for demos.
+
+Source: the current React, Express and Python code, and `spec-new.md`. The full product diagram above reflects the current service boundaries. The older diagrams below retain their original prototype and proposed-target captions. Demo rail verification is simulated, not a production UPI, bank or Account Aggregator connection.
 
 ## Slide-ready versions
 

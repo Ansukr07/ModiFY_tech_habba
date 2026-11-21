@@ -74,7 +74,7 @@ export function CashflowChart({ weeks, leanDates = [] }) {
   }, [[]]).filter((group) => group.length > 1);
 
   return <div className="dashboard-cashflow">
-    <div className="dashboard-cashflow-key" aria-hidden="true"><span className="is-in">Inflow</span><span className="is-out">Outflow</span><span className="is-net">Net</span><span className="is-lean">Weakest four weeks</span></div>
+    <div className="dashboard-cashflow-key" aria-hidden="true"><span className="is-in">Inflow</span><span className="is-out">Outflow</span><span className="is-net">Net</span>{leanDates.length > 0 && <span className="is-lean">Weakest four weeks</span>}</div>
     <div className="dashboard-cashflow-readout">
       <strong>Week of {longDate(selected.date)}</strong>
       {selected.missing ? <span>No records</span> : <>
@@ -106,7 +106,7 @@ export function CashflowChart({ weeks, leanDates = [] }) {
                 const tip = yPct(value);
                 return { bottom: `${Math.min(base, tip)}%`, height: `${Math.max(Math.abs(tip - base), value === 0 ? 0 : 0.6)}%`, transformOrigin: value < 0 ? "top center" : "bottom center" };
               };
-              return <button type="button" role="listitem" key={week.date} className={`dashboard-cashflow-col${lean ? " is-lean" : ""}${weekIndex === Math.max(0, index) ? " is-active" : ""}`} aria-pressed={weekIndex === Math.max(0, index)} aria-label={`${longDate(week.date)}${week.missing ? ", no records" : `, inflow ${paiseToInr(week.inflow)}, outflow ${paiseToInr(week.outflow)}, net ${paiseToInr(netOf(week))}`}${lean ? ", weakest four weeks" : ""}`} onMouseEnter={() => setActive(weekIndex)} onMouseLeave={() => setActive(null)} onFocus={() => setActive(weekIndex)} onBlur={() => setActive(null)}>
+              return <div role="listitem" tabIndex={0} key={week.date} className={`dashboard-cashflow-col${lean ? " is-lean" : ""}${weekIndex === Math.max(0, index) ? " is-active" : ""}`} aria-label={`${longDate(week.date)}${week.missing ? ", no records" : `, inflow ${paiseToInr(week.inflow)}, outflow ${paiseToInr(week.outflow)}, net ${paiseToInr(netOf(week))}`}${lean ? ", weakest four weeks" : ""}`} onMouseEnter={() => setActive(weekIndex)} onMouseLeave={() => setActive(null)} onFocus={() => setActive(weekIndex)} onBlur={() => setActive(null)}>
                 <span className="dashboard-cashflow-plotcol">
                   {week.missing ? <span className="dashboard-cashflow-missing">No records</span> : <>
                     <i className="dashboard-cashflow-bar is-in" style={bar(week.inflow)} />
@@ -114,13 +114,13 @@ export function CashflowChart({ weeks, leanDates = [] }) {
                   </>}
                 </span>
                 <span className="dashboard-cashflow-xlabel">{shortDate(week.date)}</span>
-              </button>;
+              </div>;
             })}
           </div>
         </div>
       </div>
     </div>
-    <p className="dashboard-cashflow-note">Dashed line is ₹0. Hover or focus a week for its inflow, outflow, and net. Shaded columns are the policy lean period.</p>
+    <p className="dashboard-cashflow-note">Dashed line is ₹0. Hover or focus a week for its inflow, outflow, and net.{leanDates.length > 0 && " Shaded columns are the policy lean period."}</p>
   </div>;
 }
 

@@ -6,7 +6,7 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "seed": "node src/seed/loadSeed.js",
-    "test": "node --test src/api.test.js"
+    "test": "node --test src/api.test.js src/repayment.test.js"
   },
   "dependencies": {
     "cookie-session": "^2.1.0",

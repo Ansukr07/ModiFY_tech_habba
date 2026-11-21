@@ -40,7 +40,7 @@ export function AssessmentGlance({ decision, narrative, requested, verifiedRails
     <div className="desk-meters" aria-label="Assessment signals">
       <Meter label="Authenticity" value={auth} max={100} tone="auth" caption={auth == null ? "Not scored" : `${auth}% · ${decision.authenticity_band || "band unavailable"}`} />
       <Meter label="Lean-period stress" value={stress} max={100} tone="stress" caption={stress == null ? "Not scored" : `${stress}% · ${decision.risk_band || "band unavailable"}`} />
-      <Meter label="Verified rails" value={verifiedRails} max={Math.max(needed, railCount, 1)} tone="rails" caption={`${verifiedRails} of ${needed} for a full limit`} />
+      <Meter label="Verified rails" value={verifiedRails} max={Math.max(needed, railCount, 1)} tone="rails" caption={`${verifiedRails} verified ${verifiedRails === 1 ? "rail" : "rails"} · ${needed} needed for a full limit`} />
     </div>
     <details className="desk-fold">
       <summary>How this was read</summary>
@@ -56,7 +56,7 @@ function railStatus(rail) {
   return ["verified", "verified_simulated"].includes(rail.trustClass) ? "Simulated verified" : "Unverified";
 }
 
-function railNote(rail, observationAge) {
+function railNote(rail, observationAge, freshnessReview) {
   const coverage = rail.coverage_from && rail.coverage_to ? `${rail.coverage_from} to ${rail.coverage_to}` : "unknown";
   const basis = rail.coverage_basis === "dated_transactions" ? "from dated transactions" : rail.coverage_basis === "fixture_declared_period" ? "fixture-declared period" : "source period unknown";
   const identity = rail.identity_match === false ? "mismatch" : rail.identity_match === true ? "matched" : "unknown";
@@ -65,7 +65,10 @@ function railNote(rail, observationAge) {
     : ["verified", "verified_simulated"].includes(rail.trustClass)
       ? "Counts toward the verified-rail gate; limit still depends on capacity and policy."
       : "Does not satisfy the verified-rail gate.";
-  return `${rail.provenance || "Unknown provenance"} · coverage ${coverage} (${basis}) · last observed ${rail.coverage_to || "unknown"} (${observationAge(rail.coverage_to)}; no freshness cutoff specified) · added ${rail.createdAt?.slice(0, 10) || "date unknown"} · identity ${identity}. ${counts}`;
+  const freshness = freshnessReview?.observed_at
+    ? `freshness review ${freshnessReview.review_required ? "required" : "not required"} under ${freshnessReview.version} (${freshnessReview.age_days} days; review after ${freshnessReview.max_age_days} days)`
+    : `freshness unknown under ${freshnessReview?.version || "the configured rule"}; no dated verified activity`;
+  return `${rail.provenance || "Unknown provenance"} · coverage ${coverage} (${basis}) · last observed ${rail.coverage_to || "unknown"} (${observationAge(rail.coverage_to)}) · ${freshness} · added ${rail.createdAt?.slice(0, 10) || "date unknown"} · identity ${identity}. ${counts}`;
 }
 
 function PairBars({ leftLabel, leftValue, rightLabel, rightValue }) {
@@ -112,10 +115,10 @@ function ScenarioShift({ decision, scenario, lean, outflow, onStress }) {
   </div>;
 }
 
-export function EvidenceBoard({ weeks, leanDates, decision, rails, verified, shop, reconciliation, statement, lean, outflow, scenario, onStress, observationAge, applicationId }) {
+export function EvidenceBoard({ weeks, leanDates, decision, rails, verified, shop, reconciliation, statement, lean, outflow, scenario, onStress, observationAge, freshnessReview, applicationId }) {
   const observed = weeks.filter((week) => !week.missing).length;
   const pdfs = rails.filter((rail) => rail.type === "pdf").length;
-  const gap = reconciliation ? Math.round(reconciliation.relative_gap * 100) : null;
+  const gap = reconciliation?.available ? Math.round(reconciliation.relative_gap * 100) : null;
   const reviewAt = decision?.policy_thresholds?.gst_upi_gap_review_above;
   return <>
     <div className="dashboard-analysis" id="evidence">
@@ -156,7 +159,7 @@ export function EvidenceBoard({ weeks, leanDates, decision, rails, verified, sho
           {rails.map((rail, index) => <li key={`${rail.type}-${index}`}>
             <div><strong>{rail.type.toUpperCase()}</strong><span>{railStatus(rail)}</span></div>
             <small>{rail.coverage_from && rail.coverage_to ? `${rail.coverage_from} – ${rail.coverage_to}` : "Coverage unknown"} · {rail.identity_match === false ? "Identity mismatch" : rail.identity_match === true ? "Identity matched" : "Identity unknown"}</small>
-            <details className="desk-fold"><summary>Source notes</summary><p>{railNote(rail, observationAge)}</p></details>
+            <details className="desk-fold"><summary>Source notes</summary><p>{railNote(rail, observationAge, freshnessReview)}</p></details>
           </li>)}
         </ul>
         {statement && <div className="desk-statement">
@@ -170,8 +173,7 @@ export function EvidenceBoard({ weeks, leanDates, decision, rails, verified, sho
         </div>}
         {reconciliation && <div className="dashboard-reconciliation">
           <strong>GST and UPI</strong>
-          <PairBars leftLabel="GST sales" leftValue={reconciliation.gst_sales_paise} rightLabel="UPI credits" rightValue={reconciliation.upi_credits_paise} />
-          <small>{gap}% difference. {reconciliation.period_note}. Review flag above {reviewAt == null ? "an unavailable threshold" : `${Math.round(reviewAt * 100)}%`}. A gap is not proof of fraud.</small>
+          {reconciliation.available ? <><PairBars leftLabel="GST sales" leftValue={reconciliation.gst_sales_paise} rightLabel="UPI credits" rightValue={reconciliation.upi_credits_paise} /><small>{gap}% difference. {reconciliation.period_note}. Review flag above {reviewAt == null ? "an unavailable threshold" : `${Math.round(reviewAt * 100)}%`}. A gap is not proof of fraud.</small></> : <small>{reconciliation.period_note}.</small>}
         </div>}
         <p className="desk-vpa">UPI ID <strong>{shop.identity?.vpa || "Not provided"}</strong>. Owner submitted. This ID alone does not verify transactions.</p>
         <p className="dashboard-trust-note">A PDF cannot establish verified activity or set a full limit.</p>
